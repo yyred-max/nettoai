@@ -1,0 +1,37 @@
+{
+    "name":  "nettoai",
+    "version":  "0.1.0",
+    "description":  "Intent verification layer for AI-assisted transactions. AI proposes. Veritas verifies. You decide.",
+    "private":  true,
+    "scripts":  {
+                    "dev":  "next dev",
+                    "build":  "next build",
+                    "start":  "next start",
+                    "lint":  "eslint",
+                    "deploy:token":  "npx tsx scripts/deploy-token.ts",
+                    "test:executor":  "npx tsx scripts/test-executor.ts",
+                    "test:full-flow":  "npx tsx scripts/test-full-veritas-flow.ts"
+                },
+    "dependencies":  {
+                         "@ai-sdk/google":  "^4.0.39",
+                         "@openzeppelin/contracts":  "^4.9.3",
+                         "ai":  "^7.0.58",
+                         "dotenv":  "^17.4.2",
+                         "next":  "16.3.0",
+                         "react":  "19.2.8",
+                         "react-dom":  "19.2.8",
+                         "viem":  "^2.55.13",
+                         "zod":  "^4.4.3"
+                     },
+    "devDependencies":  {
+                            "@tailwindcss/postcss":  "^4",
+                            "@types/node":  "^20",
+                            "@types/react":  "^19",
+                            "@types/react-dom":  "^19",
+                            "eslint":  "^9",
+                            "eslint-config-next":  "16.3.0",
+                            "tailwindcss":  "^4",
+                            "tsx":  "^4.23.12",
+                            "typescript":  "^5"
+                        }
+}
