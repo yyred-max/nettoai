@@ -7,7 +7,7 @@ type ProvenanceTableProps = {
     onBack: () => void;
     onContinue: () => void;
     network?: string;
-    wallet?: string;
+    wallet?: string | null;
 };
 
 export default function ProvenanceTable({
@@ -15,8 +15,9 @@ export default function ProvenanceTable({
     onBack,
     onContinue,
     network = "BSC TESTNET",
-    wallet = "0x71C...A92",
+    wallet = null,
 }: ProvenanceTableProps) {
+    const displayWallet = wallet || "0x...";
     const fields = [
         { field: "Recipient", status: provenance?.recipient || "unverified" },
         { field: "Amount", status: provenance?.amount || "unverified" },
@@ -44,7 +45,6 @@ export default function ProvenanceTable({
 
             <div className="flex flex-1">
                 <PipelineSidebar activeStep="provenance" showConnectButton />
-
                 <main className="flex-1 px-6 py-14 sm:px-10">
                     <div className="mx-auto max-w-4xl">
                         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -129,7 +129,7 @@ export default function ProvenanceTable({
                 <span className="text-accent">NETTOAI VERIFIED EXECUTION LAYER v1.0.42</span>
                 <div className="flex items-center gap-6 text-muted">
                     <span>Network: <span className="text-gray-300">{network}</span></span>
-                    <span className="text-gray-300">{wallet}</span>
+                    <span className="text-gray-300">{displayWallet}</span>
                     <span>Latency: <span className="text-gray-300">24ms</span></span>
                 </div>
             </footer>

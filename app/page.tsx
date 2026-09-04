@@ -37,6 +37,7 @@ export default function Home() {
   const [intent, setIntent] = useState("");
   const [resultData, setResultData] = useState<ResultData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   const handleCheck = async (userInput: string) => {
     setIntent(userInput);
@@ -82,15 +83,27 @@ export default function Home() {
     setError(null);
   };
 
+  const shortenAddress = (addr: string | null) => {
+    if (!addr) return "0x...";
+    return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+  };
+
   switch (status) {
     case "connect":
-      return <ConnectWallet onConnect={() => setStatus("idle")} />;
+      return (
+        <ConnectWallet
+          onConnect={(address) => {
+            setWalletAddress(address || null);
+            if (address) setStatus("idle");
+          }}
+        />
+      );
 
     case "idle":
-      return <IntentInput onCheck={handleCheck} />;
+      return <IntentInput onCheck={handleCheck} wallet={walletAddress ?? undefined} />;
 
     case "loading":
-      return <LoadingState message="NettoAI is analyzing..." />;
+      return <LoadingState message="NettoAI is analyzing..." wallet={walletAddress ?? undefined} />;
 
     case "action_detail":
       return resultData ? (
@@ -100,6 +113,7 @@ export default function Home() {
           intentData={resultData.intent}
           onBack={() => setStatus("idle")}
           onViewProvenance={() => setStatus("provenance")}
+          wallet={walletAddress ?? undefined}
         />
       ) : null;
 
@@ -109,6 +123,7 @@ export default function Home() {
           provenance={resultData.provenance}
           onBack={() => setStatus("action_detail")}
           onContinue={() => setStatus("allow")}
+          wallet={walletAddress ?? undefined}
         />
       ) : null;
 
@@ -120,6 +135,7 @@ export default function Home() {
           onEditIntent={() => setStatus("idle")}
           onViewDetails={() => setStatus("action_detail")}
           onConfirmExecute={() => handleExecute(resultData.decisionId)}
+          wallet={walletAddress ?? undefined}
         />
       ) : null;
 
@@ -130,6 +146,7 @@ export default function Home() {
           data={resultData}
           onViewDetails={() => setStatus("provenance")}
           onTryAgain={handleReset}
+          wallet={walletAddress ?? undefined}
         />
       ) : null;
 
@@ -137,9 +154,8 @@ export default function Home() {
       return (
         <TransactionConfirmation
           onCancel={() => setStatus("allow")}
-          onConfirmSign={() => {
-            console.log("Transaction confirmed & signed");
-          }}
+          onConfirmSign={() => console.log("Confirmed")}
+          fromAddress={shortenAddress(walletAddress)}
         />
       );
 
