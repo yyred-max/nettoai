@@ -4,19 +4,19 @@ import { runAgent } from "./agent";
 dotenv.config({ path: ".env.local" });
 
 async function main() {
-    console.log("=== GUARDIAN AGENT TEST ===");
+    console.log("=== NETTOAI AGENT TEST ===");
 
-    const result = await runAgent({
-        userIntent: "Send 50 USDT to Alice.",
-        recipient: "0x742d35Cc6634C0532925a3b844Bc9e7598f0b0d8",
-        maxAmount: 100,
-    });
+    const userInput = "Send 50 USDT to Alice.";
 
-    console.log("\n=== AGENT TEXT ===");
-    console.log(result.text);
+    const result = await runAgent(userInput);
 
-    console.log("\n=== STEPS ===");
-    console.dir(result.steps, { depth: 10 });
+    console.log("\n=== AGENT RESULT ===");
+    console.log("Status:", result.status);
+    console.log("Intent:", result.intent);
+    console.log("Action:", result.action);
+    console.log("Risk Score:", result.riskScore);
+    console.log("Risk Level:", result.riskLevel);
+    console.log("Reasons:", result.reasons);
 }
 
 main().catch((error) => {
