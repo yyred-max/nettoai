@@ -40,7 +40,7 @@ export async function runAgent(userInput: string): Promise<RunAgentResult> {
 
     // 3. Jalankan agent (Gemini)
     const result = await generateText({
-        model: google('gemini-2.0-flash'),
+        model: google('gemini-1.5-flash'),
 
         system: `
 You are NettoAI's transaction agent.
