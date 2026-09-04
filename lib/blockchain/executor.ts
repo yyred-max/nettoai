@@ -31,10 +31,19 @@ const ERC20_ABI = [
 ] as const;
 
 // ============================================================
-// 3. LAZY CLIENT — dibuat saat dibutuhkan
+// 3. LAZY CLIENTS — dibuat saat dibutuhkan
 // ============================================================
 
+let _clients: {
+    publicClient: ReturnType<typeof createPublicClient>;
+    walletClient: ReturnType<typeof createWalletClient>;
+    account: ReturnType<typeof privateKeyToAccount>;
+    tokenAddress: `0x${string}`;
+} | null = null;
+
 function getClients() {
+    if (_clients) return _clients;
+
     const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
     const tokenAddress = process.env.TOKEN_ADDRESS as `0x${string}`;
 
@@ -58,11 +67,21 @@ function getClients() {
         account,
     });
 
-    return { publicClient, walletClient, account, tokenAddress };
+    _clients = { publicClient, walletClient, account, tokenAddress };
+    return _clients;
+}
+
+// ✅ Ekspor getter untuk publicClient dan walletClient
+export function getPublicClient() {
+    return getClients().publicClient;
+}
+
+export function getWalletClient() {
+    return getClients().walletClient;
 }
 
 // ============================================================
-// 4. EXECUTOR — hanya di sini validasi dijalankan
+// 4. EXECUTOR
 // ============================================================
 
 export type ExecutorResult = {
