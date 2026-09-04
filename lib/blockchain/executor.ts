@@ -1,16 +1,21 @@
 // lib/blockchain/executor.ts
 import dotenv from 'dotenv';
-dotenv.config({ path: '.env.local' });  // ✅ HARUS INI
+dotenv.config({ path: '.env.local' });
 
 import { createPublicClient, createWalletClient, http, parseUnits } from 'viem';
 import { bscTestnet } from 'viem/chains';
 import { privateKeyToAccount } from 'viem/accounts';
 import type { TransferAction } from '../netto/policy';
 
-const RPC_URL = process.env.BSC_TESTNET_RPC || 'https://data-seed-prebsc-1-s1.binance.org:8545/';
-const PRIVATE_KEY = process.env.PRIVATE_KEY as `0x${string}`;
+// ============================================================
+// 1. KONFIGURASI (tanpa validasi di level modul)
+// ============================================================
 
-if (!PRIVATE_KEY) throw new Error('PRIVATE_KEY required in .env.local');
+const RPC_URL = process.env.BSC_TESTNET_RPC || 'https://data-seed-prebsc-1-s1.binance.org:8545/';
+
+// ============================================================
+// 2. ERC‑20 ABI
+// ============================================================
 
 const ERC20_ABI = [
     {
@@ -25,18 +30,40 @@ const ERC20_ABI = [
     },
 ] as const;
 
-const account = privateKeyToAccount(PRIVATE_KEY);
+// ============================================================
+// 3. LAZY CLIENT — dibuat saat dibutuhkan
+// ============================================================
 
-export const publicClient = createPublicClient({
-    chain: bscTestnet,
-    transport: http(RPC_URL),
-});
+function getClients() {
+    const privateKey = process.env.PRIVATE_KEY as `0x${string}`;
+    const tokenAddress = process.env.TOKEN_ADDRESS as `0x${string}`;
 
-export const walletClient = createWalletClient({
-    chain: bscTestnet,
-    transport: http(RPC_URL),
-    account,
-});
+    if (!privateKey) {
+        throw new Error('PRIVATE_KEY required in .env.local');
+    }
+    if (!tokenAddress) {
+        throw new Error('TOKEN_ADDRESS required in .env.local');
+    }
+
+    const account = privateKeyToAccount(privateKey);
+
+    const publicClient = createPublicClient({
+        chain: bscTestnet,
+        transport: http(RPC_URL),
+    });
+
+    const walletClient = createWalletClient({
+        chain: bscTestnet,
+        transport: http(RPC_URL),
+        account,
+    });
+
+    return { publicClient, walletClient, account, tokenAddress };
+}
+
+// ============================================================
+// 4. EXECUTOR — hanya di sini validasi dijalankan
+// ============================================================
 
 export type ExecutorResult = {
     success: boolean;
@@ -48,15 +75,9 @@ export type ExecutorResult = {
 export async function executeTransfer(
     action: TransferAction
 ): Promise<ExecutorResult> {
-    const tokenAddress = process.env.TOKEN_ADDRESS as `0x${string}`;
-    if (!tokenAddress) {
-        return {
-            success: false,
-            error: 'TOKEN_ADDRESS not configured in .env.local',
-        };
-    }
-
     try {
+        const { publicClient, walletClient, account, tokenAddress } = getClients();
+
         const decimals = 18;
         const amountInWei = parseUnits(action.amount.toString(), decimals);
 
