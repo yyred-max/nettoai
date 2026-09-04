@@ -2,42 +2,31 @@
 
 import PipelineSidebar from "./PipelineSidebar";
 
-type FieldStatus = {
-    label: string;
-    value: string;
-    tag: string;
-};
-
-const FIELD_STATUS: FieldStatus[] = [
-    { label: "Recipient", value: "Alice", tag: "Detected" },
-    { label: "Amount", value: "50 USDT", tag: "Detected" },
-    { label: "Token", value: "USDT", tag: "Detected" },
-];
-
 type AgentActionDetailProps = {
+    userIntent: string;
+    action: any;
+    intentData: any;
+    onBack: () => void;
+    onViewProvenance: () => void;
     network?: string;
     wallet?: string;
-    userIntent?: string;
-    functionName?: string;
-    recipient?: string;
-    amount?: string;
-    onBack?: () => void;
-    onViewProvenance?: () => void;
 };
 
 export default function AgentActionDetail({
-    network = "BSC TESTNET",
-    wallet = "0x71C...A92",
-    userIntent = "Send 50 USDT to Alice",
-    functionName = "transfer",
-    recipient = "Alice",
-    amount = "50 USDT",
+    userIntent,
+    action,
+    intentData,
     onBack,
     onViewProvenance,
+    network = "BSC TESTNET",
+    wallet = "0x71C...A92",
 }: AgentActionDetailProps) {
+    const recipient = action?.recipient || "—";
+    const amount = action?.amount || "—";
+    const token = action?.token || "USDT";
+
     return (
         <div className="flex min-h-screen flex-col bg-bg">
-            {/* Top nav */}
             <header className="flex h-16 w-full items-center justify-between border-b border-border px-6">
                 <div className="flex items-center gap-3">
                     <span className="font-display text-lg font-extrabold tracking-tight text-accent">
@@ -51,7 +40,6 @@ export default function AgentActionDetail({
                         {wallet}
                     </span>
                 </div>
-
                 <div className="flex items-center gap-3">
                     <span className="flex items-center gap-1.5 rounded-md border border-accent/60 px-3 py-1.5 font-mono text-xs text-accent">
                         <i className="bi bi-check-circle" />
@@ -70,7 +58,6 @@ export default function AgentActionDetail({
             <div className="flex flex-1">
                 <PipelineSidebar activeStep="agent_action" showConnectButton />
 
-                {/* Main content */}
                 <main className="flex-1 px-6 py-14 sm:px-10">
                     <div className="mx-auto max-w-4xl">
                         <div className="flex flex-wrap items-start justify-between gap-3">
@@ -88,7 +75,6 @@ export default function AgentActionDetail({
                             </span>
                         </div>
 
-                        {/* Intent vs Action */}
                         <div className="mt-8 grid gap-6 md:grid-cols-2">
                             <div className="rounded-lg border border-border bg-bg-panel/40 p-5">
                                 <span className="flex items-center gap-2 font-mono text-xs text-gray-300">
@@ -119,7 +105,7 @@ export default function AgentActionDetail({
                                 <div className="mt-4 grid grid-cols-2 gap-3">
                                     <div className="rounded-md border border-border px-3 py-2">
                                         <p className="font-mono text-[10px] text-muted">FUNCTION</p>
-                                        <p className="font-mono text-sm text-gray-100">{functionName}</p>
+                                        <p className="font-mono text-sm text-gray-100">transfer</p>
                                     </div>
                                     <div className="rounded-md border border-border px-3 py-2">
                                         <p className="font-mono text-[10px] text-muted">RECIPIENT</p>
@@ -127,7 +113,7 @@ export default function AgentActionDetail({
                                     </div>
                                     <div className="rounded-md border border-border px-3 py-2">
                                         <p className="font-mono text-[10px] text-muted">AMOUNT</p>
-                                        <p className="font-mono text-sm text-gray-100">{amount}</p>
+                                        <p className="font-mono text-sm text-gray-100">{amount} {token}</p>
                                     </div>
                                     <div className="rounded-md border border-border px-3 py-2">
                                         <p className="font-mono text-[10px] text-muted">NETWORK</p>
@@ -145,14 +131,12 @@ export default function AgentActionDetail({
                                         sysout
                                     </p>
                                     <p className="mt-2 text-accent">
-                                        {functionName}(recipient: {recipient}, amount:{" "}
-                                        {amount.split(" ")[0]}, token: {amount.split(" ")[1] ?? ""})
+                                        transfer(recipient: {recipient}, amount: {amount} {token})
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Field status + policy check */}
                         <div className="mt-6 grid gap-6 md:grid-cols-2">
                             <div className="rounded-lg border border-border bg-bg-panel/40 p-5">
                                 <span className="flex items-center gap-2 font-mono text-xs text-gray-300">
@@ -160,20 +144,24 @@ export default function AgentActionDetail({
                                     ACTION FIELD STATUS
                                 </span>
                                 <div className="mt-4 flex flex-col gap-3">
-                                    {FIELD_STATUS.map((field) => (
-                                        <div
-                                            key={field.label}
-                                            className="flex items-center justify-between rounded-md border border-border px-4 py-3"
-                                        >
-                                            <span className="flex items-center gap-2 font-mono text-sm text-gray-200">
-                                                <i className="bi bi-check-lg text-accent" />
-                                                {field.label} {field.value}
-                                            </span>
-                                            <span className="rounded border border-accent/50 px-2 py-1 font-mono text-[10px] text-accent">
-                                                {field.tag}
-                                            </span>
-                                        </div>
-                                    ))}
+                                    <div className="flex items-center justify-between rounded-md border border-border px-4 py-3">
+                                        <span className="flex items-center gap-2 font-mono text-sm text-gray-200">
+                                            <i className="bi bi-check-lg text-accent" />
+                                            Recipient {recipient}
+                                        </span>
+                                        <span className="rounded border border-accent/50 px-2 py-1 font-mono text-[10px] text-accent">
+                                            Detected
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center justify-between rounded-md border border-border px-4 py-3">
+                                        <span className="flex items-center gap-2 font-mono text-sm text-gray-200">
+                                            <i className="bi bi-check-lg text-accent" />
+                                            Amount {amount} {token}
+                                        </span>
+                                        <span className="rounded border border-accent/50 px-2 py-1 font-mono text-[10px] text-accent">
+                                            Detected
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -198,15 +186,12 @@ export default function AgentActionDetail({
                             </div>
                         </div>
 
-                        {/* Flow diagram */}
                         <div className="mt-6 flex items-center justify-center gap-6 rounded-lg border border-border bg-bg-panel/40 px-8 py-8">
                             <div className="flex flex-col items-center gap-2">
                                 <div className="flex h-14 w-14 items-center justify-center rounded-md border border-border text-muted">
                                     <i className="bi bi-people text-xl" />
                                 </div>
-                                <span className="font-mono text-[11px] text-muted">
-                                    USER INTENT
-                                </span>
+                                <span className="font-mono text-[11px] text-muted">USER INTENT</span>
                             </div>
                             <div className="h-px flex-1 bg-border" />
                             <div className="flex flex-col items-center gap-2">
@@ -219,13 +204,10 @@ export default function AgentActionDetail({
                                 <div className="flex h-14 w-14 items-center justify-center rounded-md border border-accent text-accent">
                                     <i className="bi bi-code-square text-xl" />
                                 </div>
-                                <span className="font-mono text-[11px] text-accent">
-                                    GENERATED ACTION
-                                </span>
+                                <span className="font-mono text-[11px] text-accent">GENERATED ACTION</span>
                             </div>
                         </div>
 
-                        {/* Footer actions */}
                         <div className="mt-8 flex items-center justify-between">
                             <button
                                 type="button"
@@ -248,18 +230,12 @@ export default function AgentActionDetail({
                 </main>
             </div>
 
-            {/* Status footer */}
             <footer className="flex h-11 w-full items-center justify-between border-t border-border bg-bg-panel/60 px-6 font-mono text-[11px]">
                 <span className="text-accent">NETTOAI VERIFIED EXECUTION LAYER v1.0.42</span>
                 <div className="flex items-center gap-6 text-muted">
-                    <span>
-                        Network: <span className="text-gray-300">{network}</span>
-                    </span>
+                    <span>Network: <span className="text-gray-300">{network}</span></span>
                     <span className="text-gray-300">{wallet}</span>
-                    <span className="flex items-center gap-1.5">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" />
-                        Latency: <span className="text-gray-300">24ms</span>
-                    </span>
+                    <span>Latency: <span className="text-gray-300">24ms</span></span>
                 </div>
             </footer>
         </div>

@@ -22,10 +22,10 @@ type UIStatus =
   | "error";
 
 type ResultData = {
-  status: 'ALLOW' | 'BLOCKED';
+  status: "ALLOW" | "BLOCKED";
   decisionId: string;
   riskScore: number;
-  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  riskLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   reasons: string[];
   intent: any;
   action: any;
@@ -96,6 +96,8 @@ export default function Home() {
       return resultData ? (
         <AgentActionDetail
           userIntent={intent}
+          action={resultData.action}
+          intentData={resultData.intent}
           onBack={() => setStatus("idle")}
           onViewProvenance={() => setStatus("provenance")}
         />
@@ -104,7 +106,7 @@ export default function Home() {
     case "provenance":
       return resultData ? (
         <ProvenanceTable
-          userInput={intent}
+          provenance={resultData.provenance}
           onBack={() => setStatus("action_detail")}
           onContinue={() => setStatus("allow")}
         />
@@ -114,7 +116,7 @@ export default function Home() {
       return resultData ? (
         <NettoResult
           result="allowed"
-          userIntent={intent}
+          data={resultData}
           onEditIntent={() => setStatus("idle")}
           onViewDetails={() => setStatus("action_detail")}
           onConfirmExecute={() => handleExecute(resultData.decisionId)}
@@ -125,7 +127,7 @@ export default function Home() {
       return resultData ? (
         <NettoResult
           result="blocked"
-          userIntent={intent}
+          data={resultData}
           onViewDetails={() => setStatus("provenance")}
           onTryAgain={handleReset}
         />
