@@ -1,5 +1,10 @@
 // components/ErrorScreen.tsx
-export function ErrorScreen({ error, onReset }: { error: string | null; onReset: () => void }) {
+interface ErrorScreenProps {
+    error: string | null;
+    onReset: () => void;
+}
+
+export default function ErrorScreen({ error, onReset }: ErrorScreenProps) {
     return (
         <div className="bg-red-900/30 border border-red-700 rounded-lg p-6 text-center">
             <p className="text-red-400">❌ {error || 'An unknown error occurred'}</p>

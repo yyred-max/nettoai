@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ConnectWallet from "@/components/ConnectWallet";
 import IntentInput from "@/components/IntentInput";
 import LoadingState from "@/components/LoadingState";
@@ -8,6 +8,7 @@ import AgentActionDetail from "@/components/AgentActionDetail";
 import ProvenanceTable from "@/components/ProvenanceTable";
 import NettoResult from "@/components/NettoResult";
 import TransactionConfirmation from "@/components/TransactionConfirmation";
+import ErrorScreen from "@/components/ErrorScreen";
 
 type UIStatus =
   | "connect"
@@ -17,87 +18,131 @@ type UIStatus =
   | "provenance"
   | "allow"
   | "blocked"
-  | "confirm";
+  | "confirm"
+  | "error";
+
+type ResultData = {
+  status: 'ALLOW' | 'BLOCKED';
+  decisionId: string;
+  riskScore: number;
+  riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  reasons: string[];
+  intent: any;
+  action: any;
+  provenance: any;
+};
 
 export default function Home() {
   const [status, setStatus] = useState<UIStatus>("connect");
   const [intent, setIntent] = useState("");
+  const [resultData, setResultData] = useState<ResultData | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Demo only: auto-advance past the loading screen after a short delay.
-  // Replace with real pipeline polling / websocket updates.
-  useEffect(() => {
-    if (status !== "loading") return;
-    const timer = setTimeout(() => setStatus("action_detail"), 3000);
-    return () => clearTimeout(timer);
-  }, [status]);
+  const handleCheck = async (userInput: string) => {
+    setIntent(userInput);
+    setStatus("loading");
+    setError(null);
+    try {
+      const res = await fetch("/api/agent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userInput }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "NettoAI check failed");
+      setResultData(data);
+      setStatus(data.status === "ALLOW" ? "action_detail" : "blocked");
+    } catch (err: any) {
+      setError(err.message);
+      setStatus("error");
+    }
+  };
+
+  const handleExecute = async (decisionId: string) => {
+    setStatus("loading");
+    try {
+      const res = await fetch("/api/agent/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ decisionId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Execution failed");
+      console.log("TX Hash:", data.txHash);
+      setStatus("confirm");
+    } catch (err: any) {
+      setError(err.message);
+      setStatus("error");
+    }
+  };
+
+  const handleReset = () => {
+    setStatus("idle");
+    setResultData(null);
+    setError(null);
+  };
 
   switch (status) {
     case "connect":
       return <ConnectWallet onConnect={() => setStatus("idle")} />;
 
     case "idle":
-      return (
-        <IntentInput
-          onCheck={(value) => {
-            setIntent(value);
-            setStatus("loading");
-          }}
-        />
-      );
+      return <IntentInput onCheck={handleCheck} />;
 
     case "loading":
-      return <LoadingState />;
+      return <LoadingState message="NettoAI is analyzing..." />;
 
     case "action_detail":
-      return (
+      return resultData ? (
         <AgentActionDetail
-          userIntent={intent || "Send 50 USDT to Alice"}
+          userIntent={intent}
           onBack={() => setStatus("idle")}
           onViewProvenance={() => setStatus("provenance")}
         />
-      );
+      ) : null;
 
     case "provenance":
-      return (
+      return resultData ? (
         <ProvenanceTable
-          userInput={intent || "Send 50 USDT to Alice"}
+          userInput={intent}
           onBack={() => setStatus("action_detail")}
-          // Replace with the real ALLOW/BLOCKED decision from the pipeline.
           onContinue={() => setStatus("allow")}
         />
-      );
+      ) : null;
 
     case "allow":
-      return (
+      return resultData ? (
         <NettoResult
           result="allowed"
-          userIntent={intent || "Send 50 USDT to Alice"}
+          userIntent={intent}
           onEditIntent={() => setStatus("idle")}
           onViewDetails={() => setStatus("action_detail")}
-          onConfirmExecute={() => setStatus("confirm")}
+          onConfirmExecute={() => handleExecute(resultData.decisionId)}
         />
-      );
+      ) : null;
 
     case "blocked":
-      return (
+      return resultData ? (
         <NettoResult
           result="blocked"
-          userIntent={intent || "Send 50 USDT to Alice"}
+          userIntent={intent}
           onViewDetails={() => setStatus("provenance")}
-          onTryAgain={() => setStatus("idle")}
+          onTryAgain={handleReset}
         />
-      );
+      ) : null;
 
     case "confirm":
       return (
         <TransactionConfirmation
           onCancel={() => setStatus("allow")}
           onConfirmSign={() => {
-            // Next: submit the signed transaction, then show a success/error screen.
             console.log("Transaction confirmed & signed");
           }}
         />
       );
+
+    case "error":
+      return <ErrorScreen error={error} onReset={handleReset} />;
 
     default:
       return null;

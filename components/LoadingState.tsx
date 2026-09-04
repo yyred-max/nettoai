@@ -62,16 +62,17 @@ type LoadingStateProps = {
     network?: string;
     wallet?: string;
     activeStep?: PipelineStepId;
+    message?: string; // ✅ tambahan
 };
 
 export default function LoadingState({
     network = "BSC TESTNET",
     wallet = "0x71C...A92",
     activeStep = "policy_check",
+    message = "NettoAI is analyzing your request...",
 }: LoadingStateProps) {
     return (
         <div className="flex min-h-screen flex-col bg-bg">
-            {/* Top nav */}
             <header className="flex h-16 w-full items-center justify-between border-b border-border px-6">
                 <div className="flex items-center gap-3">
                     <span className="font-display text-lg font-extrabold tracking-tight text-accent">
@@ -102,7 +103,6 @@ export default function LoadingState({
             <div className="flex flex-1">
                 <PipelineSidebar activeStep={activeStep} showConnectButton />
 
-                {/* Main timeline */}
                 <main className="flex-1 px-6 py-14 sm:px-10">
                     <div className="mx-auto max-w-3xl">
                         <div className="flex items-center gap-3">
@@ -112,20 +112,18 @@ export default function LoadingState({
                             </h1>
                         </div>
                         <p className="mt-3 text-sm text-muted sm:text-base">
-                            Pipeline execution in progress. Verifying origin, constraints,
-                            and proposed state changes against enforced security policies.
+                            {message}
                         </p>
 
                         <div className="relative mt-10 flex flex-col gap-6">
-                            {/* vertical connector line */}
                             <div className="absolute bottom-4 left-[13px] top-4 w-px bg-border" />
 
                             {TIMELINE.map((step, idx) => (
                                 <div key={step.title} className="relative flex gap-4">
                                     <div
                                         className={`z-10 mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 bg-bg ${step.status === "pending"
-                                                ? "border-border text-muted"
-                                                : "border-accent text-accent"
+                                            ? "border-border text-muted"
+                                            : "border-accent text-accent"
                                             }`}
                                     >
                                         {step.status === "done" && (
@@ -178,7 +176,6 @@ export default function LoadingState({
                 </main>
             </div>
 
-            {/* Status footer */}
             <footer className="flex h-11 w-full items-center justify-between border-t border-border bg-bg-panel/60 px-6 font-mono text-[11px]">
                 <span className="text-accent">NETTOAI VERIFIED EXECUTION LAYER v1.0.42</span>
                 <span className="text-muted">
