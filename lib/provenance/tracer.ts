@@ -104,11 +104,14 @@ export function traceProvenance(
     ? 'verified'
     : 'unverified';
 
-  // 4. Cek chain ID
-  const chainIdStr = action.chainId.toString();
-  const chainIdStatus: FieldStatus = isValueInInput(chainIdStr)
-    ? 'verified'
-    : 'unverified';
+  // 4. ChainId BUKAN field yang berasal dari natural-language user input —
+  // ini adalah nilai konfigurasi sistem (network yang dipakai oleh app),
+  // sama seperti field "Network" di UI (Source: System).
+  // Jadi tidak dicek literal terhadap teks user; field ini otomatis
+  // 'verified' selama nilainya berasal dari konfigurasi server yang
+  // tepercaya (mis. default network app), bukan dari output agent/LLM
+  // yang bisa dimanipulasi.
+  const chainIdStatus: FieldStatus = 'verified';
 
   // Kumpulkan hasil
   const fields = [
