@@ -14,7 +14,8 @@ export type RunAgentResult = {
         token: string;
         chainId: number;
     };
-    status: 'ALLOW' | 'BLOCKED';
+    // ✅ Tambah 'FAILED' & 'NO_ACTION' — jangan paksa semua kondisi jadi BLOCKED
+    status: 'ALLOW' | 'BLOCKED' | 'FAILED' | 'NO_ACTION';
     riskScore: number;
     riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     reasons: string[];
@@ -73,29 +74,74 @@ If the user request requires a transfer, use the transferUSDT tool.
         stopWhen: stepCountIs(3),
     });
 
+    // 🔍 DEBUG: log apa yang sebenarnya dilakukan model.
+    // Cek log ini di Vercel (Deployments → pilih deployment → Functions/Logs)
+    // untuk tahu KENAPA tool tidak dipanggil (model refuse, salah paham
+    // prompt, dsb). Hapus/redam log ini setelah masalah ketemu.
+    console.log('[NettoAI][debug] finishReason:', result.finishReason);
+    console.log('[NettoAI][debug] text:', result.text);
+    console.log(
+        '[NettoAI][debug] steps:',
+        JSON.stringify(result.steps, null, 2)
+    );
+
     // 4. Ambil hasil tool call dari langkah terakhir
     const lastStep = result.steps?.[result.steps.length - 1];
-    // ✅ Type assertion untuk mengakses .result
     const toolResult = (lastStep?.toolResults?.[0] as any)?.result;
 
-    // 5. Tentukan status
-    const status = toolResult?.status === 'EXECUTED' ? 'ALLOW' : 'BLOCKED';
+    // ⚠️ Kasus penting: model tidak memanggil tool sama sekali.
+    // Ini BUKAN "BLOCKED" (bukan hasil keputusan keamanan) — ini kegagalan
+    // agent untuk menghasilkan action. Jangan disamarkan jadi BLOCKED,
+    // supaya tidak terlihat seperti pelanggaran kebijakan padahal bukan.
+    if (!toolResult) {
+        return {
+            intent,
+            action: {
+                recipient: intent.recipient,
+                amount: intent.maxAmount,
+                token: intent.token,
+                chainId: intent.chainId,
+            },
+            status: 'NO_ACTION',
+            riskScore: 0,
+            riskLevel: 'LOW',
+            reasons: [
+                result.text?.trim()
+                    ? `Agent did not call the transfer tool. Model said: "${result.text.trim()}"`
+                    : 'Agent did not call the transfer tool and returned no explanation.',
+            ],
+        };
+    }
+
+    // 5. Tentukan status dari hasil tool (EXECUTED / BLOCKED / FAILED)
+    const status: RunAgentResult['status'] =
+        toolResult.status === 'EXECUTED'
+            ? 'ALLOW'
+            : toolResult.status === 'FAILED'
+                ? 'FAILED'
+                : 'BLOCKED';
 
     // 6. Ambil action dari toolResult, atau fallback ke intent
-    const action = toolResult?.action || {
+    const action = toolResult.action || {
         recipient: intent.recipient,
         amount: intent.maxAmount,
         token: intent.token,
         chainId: intent.chainId,
     };
 
-    // 7. Return hasil lengkap
+    // 7. Reasons: sertakan error eksekusi kalau statusnya FAILED
+    const reasons: string[] = toolResult.reasons ? [...toolResult.reasons] : [];
+    if (status === 'FAILED' && toolResult.error) {
+        reasons.push(`Execution failed: ${toolResult.error}`);
+    }
+
+    // 8. Return hasil lengkap
     return {
         intent,
         action,
         status,
-        riskScore: toolResult?.riskScore || 0,
-        riskLevel: toolResult?.riskLevel || 'LOW',
-        reasons: toolResult?.reasons || [],
+        riskScore: toolResult.riskScore || 0,
+        riskLevel: toolResult.riskLevel || 'LOW',
+        reasons,
     };
 }
