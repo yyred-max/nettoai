@@ -44,14 +44,13 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // 4. Buat decisionId dan simpan ke store
+        // 4. Buat decisionId dan simpan ke Redis
         const decisionId = `dcs_${randomUUID().slice(0, 8)}`;
-        decisionStore.set(decisionId, {
+        await decisionStore.set(decisionId, {
             intent,
             action,
             provenance,
             userInput,
-            status: 'pending',
         });
 
         // 5. Response (tanpa execute)

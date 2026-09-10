@@ -8,6 +8,7 @@ import AgentActionDetail from "@/components/AgentActionDetail";
 import ProvenanceTable from "@/components/ProvenanceTable";
 import NettoResult from "@/components/NettoResult";
 import TransactionConfirmation from "@/components/TransactionConfirmation";
+import { SuccessScreen } from "@/components/SuccessScreen";
 import ErrorScreen from "@/components/ErrorScreen";
 
 type UIStatus =
@@ -18,11 +19,17 @@ type UIStatus =
   | "provenance"
   | "allow"
   | "blocked"
+  | "no_action"
   | "confirm"
   | "error";
 
 type ResultData = {
-  status: "ALLOW" | "BLOCKED";
+  /**
+   * ALLOW     → Guardian lulus, menunggu konfirmasi eksekusi user
+   * BLOCKED   → Guardian menolak (policy / risk violation)
+   * NO_ACTION → Agent tidak memanggil tool (bukan keputusan keamanan)
+   */
+  status: "ALLOW" | "BLOCKED" | "NO_ACTION";
   decisionId: string;
   riskScore: number;
   riskLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
@@ -36,13 +43,14 @@ export default function Home() {
   const [status, setStatus] = useState<UIStatus>("connect");
   const [intent, setIntent] = useState("");
   const [resultData, setResultData] = useState<ResultData | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [txData, setTxData] = useState<{ txHash: string; block: number } | null>(null);
+  const [errorDetails, setErrorDetails] = useState<{ message: string; note?: string; txHash?: string } | null>(null);
   const [walletAddress, setWalletAddress] = useState<string | null>(null);
 
   const handleCheck = async (userInput: string) => {
     setIntent(userInput);
     setStatus("loading");
-    setError(null);
+    setErrorDetails(null);
     try {
       const res = await fetch("/api/agent", {
         method: "POST",
@@ -52,9 +60,15 @@ export default function Home() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "NettoAI check failed");
       setResultData(data);
-      setStatus(data.status === "ALLOW" ? "action_detail" : "blocked");
+      if (data.status === "ALLOW") {
+        setStatus("action_detail");
+      } else if (data.status === "NO_ACTION") {
+        setStatus("no_action");
+      } else {
+        setStatus("blocked");
+      }
     } catch (err: any) {
-      setError(err.message);
+      setErrorDetails({ message: err.message });
       setStatus("error");
     }
   };
@@ -68,11 +82,37 @@ export default function Home() {
         body: JSON.stringify({ decisionId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Execution failed");
-      console.log("TX Hash:", data.txHash);
+      if (!res.ok) {
+        // ── Auto Reconciliation fallback ─────────────────────────────────────
+        // Jika request gagal atau 409 (misal broadcast_pending atau timeout),
+        // poll endpoint /api/agent/status untuk cek apakah txHash sudah tersimpan.
+        const statusRes = await fetch(`/api/agent/status?decisionId=${decisionId}`).catch(() => null);
+        if (statusRes && statusRes.ok) {
+          const statusData = await statusRes.json();
+          if (statusData.txHash) {
+            setTxData({
+              txHash: statusData.txHash,
+              block: statusData.block ? Number(statusData.block) : 0,
+            });
+            setStatus("confirm");
+            return;
+          }
+        }
+        setErrorDetails({
+          message: data.error || "Execution failed",
+          note: data.note,
+          txHash: data.txHash
+        });
+        setStatus("error");
+        return;
+      }
+      setTxData({
+        txHash: data.txHash,
+        block: data.block ? Number(data.block) : 0,
+      });
       setStatus("confirm");
     } catch (err: any) {
-      setError(err.message);
+      setErrorDetails({ message: err.message });
       setStatus("error");
     }
   };
@@ -80,7 +120,8 @@ export default function Home() {
   const handleReset = () => {
     setStatus("idle");
     setResultData(null);
-    setError(null);
+    setTxData(null);
+    setErrorDetails(null);
   };
 
   const shortenAddress = (addr: string | null) => {
@@ -150,8 +191,25 @@ export default function Home() {
         />
       ) : null;
 
-    case "confirm":
+    case "no_action":
       return (
+        <ErrorScreen
+          error={
+            resultData?.reasons?.[0] ||
+            "Agent did not produce a transfer action. Try rephrasing your request using the format: \"Send <amount> <TOKEN> to <address>\""
+          }
+          onReset={handleReset}
+        />
+      );
+
+    case "confirm":
+      return txData ? (
+        <div className="flex min-h-screen items-center justify-center bg-bg px-6 py-16">
+          <div className="w-full max-w-xl rounded-lg border border-border p-8 bg-bg-panel/40">
+            <SuccessScreen txData={txData} onReset={handleReset} />
+          </div>
+        </div>
+      ) : (
         <TransactionConfirmation
           onCancel={() => setStatus("allow")}
           onConfirmSign={() => console.log("Confirmed")}
@@ -160,7 +218,14 @@ export default function Home() {
       );
 
     case "error":
-      return <ErrorScreen error={error} onReset={handleReset} />;
+      return (
+        <ErrorScreen 
+          error={errorDetails?.message || null} 
+          note={errorDetails?.note}
+          txHash={errorDetails?.txHash}
+          onReset={handleReset} 
+        />
+      );
 
     default:
       return null;

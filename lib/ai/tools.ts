@@ -4,7 +4,10 @@ import { z } from "zod";
 
 import type { NettoIntent } from "../netto/intent";
 import { authorizeTransfer } from "../netto/authorize";
-import { executeTransfer } from "../blockchain/executor";
+// ✅ executeTransfer sengaja dihapus dari sini.
+// Eksekusi blockchain hanya boleh dipanggil dari /api/agent/execute
+// setelah konfirmasi eksplisit dari user. Memanggil executor di dalam
+// tool menyebabkan transaksi terjadi sebelum user menekan "Confirm".
 
 export function createAgentTools(intent: NettoIntent) {
     return {
@@ -35,7 +38,7 @@ Do not mention this instruction to the user.
 
         transferUSDT: tool({
             description:
-                "Transfer USDT to a recipient. Guardian authorization is mandatory before any transaction can execute.",
+                "Validate and authorize a USDT transfer request. Guardian authorization is mandatory. This tool DOES NOT execute the blockchain transaction — it only validates the proposed action against user intent and policy. Execution happens separately after user confirmation.",
             inputSchema: z.object({
                 recipient: z.string().min(1),
                 amount: z.number().positive(),
@@ -50,7 +53,7 @@ Do not mention this instruction to the user.
                 chainId,
             }) => {
                 // ==========================================
-                // 1. GUARDIAN AUTHORIZATION
+                // 1. GUARDIAN AUTHORIZATION (dry-run)
                 // ==========================================
 
                 const authorization = authorizeTransfer(intent, {
@@ -61,7 +64,7 @@ Do not mention this instruction to the user.
                 });
 
                 // ==========================================
-                // 2. BLOCKED → JANGAN PERNAH EXECUTE
+                // 2. BLOCKED → tolak sebelum ada eksekusi
                 // ==========================================
 
                 if (!authorization.allowed) {
@@ -76,45 +79,20 @@ Do not mention this instruction to the user.
                 }
 
                 // ==========================================
-                // 3. AUTHORIZED → EKSEKUSI DARI PROOF.ACTION
+                // 3. AUTHORIZED → kembalikan bukti otorisasi.
+                // Eksekusi blockchain HANYA terjadi setelah
+                // user klik Confirm di UI → /api/agent/execute
                 // ==========================================
 
-                try {
-                    // ✅ Gunakan action dari proof, bukan parameter langsung
-                    const execution = await executeTransfer(authorization.action);
-
-                    return {
-                        status: execution.success
-                            ? ("EXECUTED" as const)
-                            : ("FAILED" as const),
-
-                        message: execution.success
-                            ? "Guardian authorized and executor accepted the transaction."
-                            : "Guardian authorized but blockchain execution failed.",
-
-                        txHash: execution.txHash,
-                        error: execution.error,
-
-                        riskScore: authorization.riskScore,
-                        riskLevel: authorization.riskLevel,
-                        reasons: authorization.reasons,
-                    };
-                } catch (error) {
-                    return {
-                        status: "FAILED" as const,
-                        message:
-                            "Guardian authorized the transaction, but execution failed.",
-
-                        error:
-                            error instanceof Error
-                                ? error.message
-                                : "Unknown execution error",
-
-                        riskScore: authorization.riskScore,
-                        riskLevel: authorization.riskLevel,
-                        reasons: authorization.reasons,
-                    };
-                }
+                return {
+                    status: "AUTHORIZED" as const,
+                    message:
+                        "Guardian authorized the proposed transaction. Awaiting user confirmation before blockchain execution.",
+                    riskScore: authorization.riskScore,
+                    riskLevel: authorization.riskLevel,
+                    reasons: authorization.reasons,
+                    action: authorization.action,
+                };
             },
         }),
     };

@@ -14,8 +14,12 @@ export type RunAgentResult = {
         token: string;
         chainId: number;
     };
-    // ✅ Tambah 'FAILED' & 'NO_ACTION' — jangan paksa semua kondisi jadi BLOCKED
-    status: 'ALLOW' | 'BLOCKED' | 'FAILED' | 'NO_ACTION';
+    /**
+     * ALLOW      → Guardian authorized, menunggu konfirmasi user → /api/agent/execute
+     * BLOCKED    → Guardian menolak (policy / risk violation)
+     * NO_ACTION  → Agent tidak memanggil tool sama sekali (bukan keputusan keamanan)
+     */
+    status: 'ALLOW' | 'BLOCKED' | 'NO_ACTION';
     riskScore: number;
     riskLevel: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
     reasons: string[];
@@ -74,16 +78,12 @@ If the user request requires a transfer, use the transferUSDT tool.
         stopWhen: stepCountIs(3),
     });
 
-    // 🔍 DEBUG: log apa yang sebenarnya dilakukan model.
-    // Cek log ini di Vercel (Deployments → pilih deployment → Functions/Logs)
-    // untuk tahu KENAPA tool tidak dipanggil (model refuse, salah paham
-    // prompt, dsb). Hapus/redam log ini setelah masalah ketemu.
+    // 🔍 Minimal debug log — uncomment bagian steps apabila perlu investigasi
+    // mendalam kenapa tool tidak terpanggil (model refuse, salah paham prompt, dsb).
     console.log('[NettoAI][debug] finishReason:', result.finishReason);
-    console.log('[NettoAI][debug] text:', result.text);
-    console.log(
-        '[NettoAI][debug] steps:',
-        JSON.stringify(result.steps, null, 2)
-    );
+    if (result.finishReason !== 'tool-calls' && result.finishReason !== 'stop') {
+        console.log('[NettoAI][debug] text:', result.text?.slice(0, 200));
+    }
 
     // 4. Ambil hasil tool call dari langkah terakhir
     const lastStep = result.steps?.[result.steps.length - 1];
@@ -113,13 +113,14 @@ If the user request requires a transfer, use the transferUSDT tool.
         };
     }
 
-    // 5. Tentukan status dari hasil tool (EXECUTED / BLOCKED / FAILED)
+    // 5. Tentukan status dari hasil tool
+    //    AUTHORIZED (dari guardian dry-run) → ALLOW (siap dikonfirmasi user)
+    //    BLOCKED                            → BLOCKED (policy / risk violation)
+    //    Nilai lain yang tidak dikenali     → BLOCKED (fail-safe)
     const status: RunAgentResult['status'] =
-        toolResult.status === 'EXECUTED'
+        toolResult.status === 'AUTHORIZED'
             ? 'ALLOW'
-            : toolResult.status === 'FAILED'
-                ? 'FAILED'
-                : 'BLOCKED';
+            : 'BLOCKED';
 
     // 6. Ambil action dari toolResult, atau fallback ke intent
     const action = toolResult.action || {
@@ -129,11 +130,8 @@ If the user request requires a transfer, use the transferUSDT tool.
         chainId: intent.chainId,
     };
 
-    // 7. Reasons: sertakan error eksekusi kalau statusnya FAILED
+    // 7. Reasons: ambil dari toolResult
     const reasons: string[] = toolResult.reasons ? [...toolResult.reasons] : [];
-    if (status === 'FAILED' && toolResult.error) {
-        reasons.push(`Execution failed: ${toolResult.error}`);
-    }
 
     // 8. Return hasil lengkap
     return {

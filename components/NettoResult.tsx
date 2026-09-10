@@ -3,7 +3,7 @@
 import PipelineSidebar from "./PipelineSidebar";
 
 type ResultData = {
-    status: "ALLOW" | "BLOCKED";
+    status: "ALLOW" | "BLOCKED" | "NO_ACTION";
     decisionId: string;
     riskScore: number;
     riskLevel: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
