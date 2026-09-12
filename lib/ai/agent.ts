@@ -85,16 +85,17 @@ If the user request requires a transfer, use the transferUSDT tool.
         console.log('[NettoAI][debug] text:', result.text?.slice(0, 200));
     }
 
-    // 4. Ambil hasil tool call dari SELURUH langkah (bukan cuma yang terakhir)
-    let toolResult: any = null;
-    if (result.steps) {
-        for (const step of result.steps) {
-            if (step.toolResults && step.toolResults.length > 0) {
-                toolResult = (step.toolResults[0] as any).result;
-                break; // ketemu!
-            }
-        }
-    }
+    // 4. Ambil hasil tool call dari SELURUH langkah
+    const allToolResults = result.steps?.flatMap(
+        (step) => step.toolResults ?? []
+    ) ?? [];
+
+    const transferResult = allToolResults.find(
+        (tr: any) => tr.toolName === 'transferUSDT'
+    );
+
+    // Ambil dari .output (Vercel AI SDK v3.x behavior) atau .result (fallback)
+    const toolResult = (transferResult as any)?.output ?? (transferResult as any)?.result;
 
     console.log('[NettoAI][debug] jumlah steps:', result.steps?.length, 'toolResults per step:', result.steps?.map(s => s.toolResults?.length || 0));
 
