@@ -10,7 +10,6 @@ import NettoResult from "@/components/NettoResult";
 import TransactionConfirmation from "@/components/TransactionConfirmation";
 import { SuccessScreen } from "@/components/SuccessScreen";
 import ErrorScreen from "@/components/ErrorScreen";
-import LandingPage from "@/components/LandingPage";
 
 type UIStatus =
   | "connect"
@@ -22,10 +21,7 @@ type UIStatus =
   | "blocked"
   | "no_action"
   | "confirm"
-  | "error"
-  | "landing"
-  | "connect"
-  | "idle";
+  | "error";
 
 type ResultData = {
   status: "ALLOW" | "BLOCKED" | "NO_ACTION";
@@ -39,8 +35,7 @@ type ResultData = {
 };
 
 export default function Home() {
-  const [status, setStatus] = useState<UIStatus>("landing");
-  // const [status, setStatus] = useState<UIStatus>("connect");
+  const [status, setStatus] = useState<UIStatus>("connect");
   const [intent, setIntent] = useState("");
   const [resultData, setResultData] = useState<ResultData | null>(null);
   const [txData, setTxData] = useState<{ txHash: string; block: number } | null>(null);
@@ -127,9 +122,6 @@ export default function Home() {
   };
 
   switch (status) {
-    case "landing":
-      return <LandingPage onLaunchApp={() => setStatus("connect")} />;
-
     case "connect":
       return (
         <ConnectWallet
