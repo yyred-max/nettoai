@@ -44,7 +44,8 @@ export default function ProvenanceTable({
             </header>
 
             <div className="flex flex-1">
-                <PipelineSidebar activeStep="provenance" showConnectButton />
+                {/* PERBAIKAN DI SINI: Menghapus showConnectButton, menggunakan wallet */}
+                <PipelineSidebar activeStep="provenance" wallet={wallet} />
                 <main className="flex-1 px-6 py-14 sm:px-10">
                     <div className="mx-auto max-w-4xl">
                         <div className="flex flex-wrap items-start justify-between gap-3">

@@ -3,23 +3,26 @@
 type LoadingStateProps = {
     /** Text shown next to the spinner, e.g. "Evaluating policy limits" */
     label?: string;
+    /** Custom message dari parent component */
+    message?: string;
+    /** Wallet address untuk ditampilkan (opsional) */
+    wallet?: string | null;
     /** "pending" = neutral/waiting (gray), "checking" = active work (accent) */
     tone?: "pending" | "checking";
     /** Show the indeterminate progress bar under the label */
     showBar?: boolean;
 };
 
-/**
- * Reusable animated loading indicator used across the verification pipeline
- * (Policy Check, Provenance, Decision, etc.) so every "in progress" moment
- * in the app looks and behaves the same way — fixes the inconsistent /
- * static "PENDING" bar that gave no feedback that work was happening.
- */
 export default function LoadingState({
     label = "Processing…",
+    message,
+    wallet,
     tone = "checking",
     showBar = true,
 }: LoadingStateProps) {
+    // Gunakan message jika disediakan, jika tidak gunakan label default
+    const displayText = message || label;
+
     const colorClasses =
         tone === "checking"
             ? {
@@ -48,7 +51,7 @@ export default function LoadingState({
                     aria-hidden="true"
                 />
                 <span className={`font-mono text-xs tracking-wide ${colorClasses.text}`}>
-                    {label}
+                    {displayText}
                     <span className="inline-flex w-4 justify-start overflow-hidden align-bottom">
                         <span className="animate-[ellipsis_1.4s_infinite]">...</span>
                     </span>
@@ -63,9 +66,6 @@ export default function LoadingState({
                 </div>
             )}
 
-            {/* Local keyframes: indeterminate bar slide + ellipsis blink.
-               Move these into your global stylesheet (e.g. globals.css)
-               if you use <LoadingState /> in more than one place. */}
             <style jsx>{`
                 @keyframes loading-slide {
                     0% {

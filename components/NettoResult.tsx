@@ -173,7 +173,8 @@ export default function NettoResult({
             </header>
 
             <div className="flex flex-1">
-                <PipelineSidebar activeStep="decision" showConnectButton />
+                {/* PERBAIKAN DI SINI: Menghapus showConnectButton, menggunakan wallet */}
+                <PipelineSidebar activeStep="decision" wallet={wallet} />
                 <main className="flex-1 px-6 py-10 sm:px-10">
                     <div className="mx-auto max-w-4xl">
                         <div className="h-0.5 w-full bg-accent" />
