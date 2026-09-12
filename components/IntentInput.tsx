@@ -66,24 +66,26 @@ export default function IntentInput({
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg">
-      <header className="flex h-16 w-full items-center justify-between border-b border-border px-6">
+    <div className="flex min-h-screen flex-col bg-transparent">
+      <header className="flex h-16 w-full items-center justify-between border-b border-white/5 bg-black/20 px-6 backdrop-blur-md">
         <div className="flex items-center gap-3">
-          <i className="bi bi-shield-fill-check text-xl text-accent" />
-          <span className="font-display text-lg font-extrabold tracking-tight text-accent">NETTOAI</span>
-          <span className="text-border">|</span>
-          <span className="font-mono text-xs text-muted">{network}</span>
+          <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-accent to-blue-600 shadow-[0_0_15px_rgba(56,189,248,0.3)]">
+             <i className="bi bi-shield-fill-check text-white" />
+          </div>
+          <span className="font-display text-xl font-bold tracking-wide text-white">NETTO<span className="text-accent font-light">AI</span></span>
+          <span className="text-border mx-1">|</span>
+          <span className="font-mono text-xs text-muted/70 tracking-widest uppercase">{network}</span>
         </div>
 
-        <div className="flex items-center gap-3">
-          <span className="flex items-center gap-1.5 rounded-md border border-border bg-bg-panel px-3 py-1.5 font-mono text-xs">
+        <div className="flex items-center gap-4">
+          <span className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-3 py-1.5 font-mono text-[10px] uppercase tracking-wider backdrop-blur-md">
             <span className={`inline-block h-1.5 w-1.5 rounded-full ${connected ? "bg-emerald-400" : "bg-red-500"}`} />
             <span className={connected ? "text-emerald-400" : "text-red-400"}>
-              {connected ? "CONNECTED" : "DISCONNECTED"}
+              {connected ? "LIVE" : "DISCONNECTED"}
             </span>
           </span>
 
-          <span className="flex items-center gap-1.5 rounded-md border border-border bg-bg-panel px-3 py-1.5 font-mono text-xs text-gray-300">
+          <span className="flex items-center gap-2 rounded-full border border-white/10 bg-black/40 px-4 py-1.5 font-mono text-xs text-gray-300 backdrop-blur-md transition-all hover:bg-white/5 cursor-pointer">
             <i className="bi bi-wallet2 text-accent" />
             {displayWallet}
           </span>
@@ -92,79 +94,91 @@ export default function IntentInput({
             type="button"
             onClick={onSettingsClick}
             aria-label="Settings"
-            className="flex h-8 w-8 items-center justify-center rounded-md text-muted transition-colors hover:text-accent"
+            className="flex h-9 w-9 items-center justify-center rounded-full bg-white/5 border border-white/10 text-muted transition-all hover:text-white hover:bg-white/10"
           >
-            <i className="bi bi-gear text-lg" />
+            <i className="bi bi-gear text-sm" />
           </button>
         </div>
       </header>
 
-      <div className="flex flex-1">
-        <aside className="hidden w-64 flex-col border-r border-border px-5 py-6 sm:flex">
-          <p className="font-mono text-[11px] tracking-wide text-muted">SECURITY VERIFICATION</p>
-          <p className="mt-1 font-display text-xl font-extrabold tracking-tight text-accent">PIPELINE</p>
-          <nav className="mt-6 flex flex-col">
-            {PIPELINE_STEPS.map((step) => {
+      <div className="flex flex-1 overflow-hidden relative">
+        <aside className="hidden w-72 flex-col border-r border-white/5 bg-black/20 backdrop-blur-xl px-6 py-8 sm:flex z-10">
+          <p className="font-mono text-[10px] font-bold tracking-[0.2em] text-muted/70 uppercase">Security Check</p>
+          <p className="mt-1 font-display text-2xl font-light tracking-tight text-white">Pipeline</p>
+          <nav className="mt-8 flex flex-col gap-2 relative">
+            <div className="absolute left-[15px] top-4 bottom-4 w-[1px] bg-white/10 -z-10 rounded-full" />
+            {PIPELINE_STEPS.map((step, idx) => {
               const isActive = step.id === activeStep;
+              const isPast = PIPELINE_STEPS.findIndex(s => s.id === step.id) < PIPELINE_STEPS.findIndex(s => s.id === activeStep);
               return (
                 <div
                   key={step.id}
-                  className={`flex items-center gap-3 border-l-2 px-3 py-3 font-mono text-sm ${isActive ? "border-accent bg-accent/10 text-accent" : "border-transparent text-muted"
+                  className={`flex items-center gap-4 px-3 py-3 font-sans text-sm rounded-xl transition-all duration-300 ${isActive ? "bg-accent/15 text-accent shadow-[inset_0_0_12px_rgba(56,189,248,0.2)] ring-1 ring-accent/30" : isPast ? "text-gray-300 hover:bg-white/5" : "text-muted/60"
                     }`}
                 >
-                  <i className={`bi ${step.icon}`} />
-                  {step.label}
+                  <div className={`flex items-center justify-center w-8 h-8 rounded-full ${isActive ? 'bg-accent/20 text-accent ring-1 ring-accent/50 shadow-[0_0_10px_rgba(56,189,248,0.5)]' : isPast ? 'bg-white/10 text-gray-300' : 'bg-black/40 text-muted/40'}`}>
+                     <i className={`bi ${step.icon} text-[15px]`} />
+                  </div>
+                  <span className={isActive ? 'font-medium tracking-wide' : 'font-light'}>{step.label}</span>
+                  {isPast && <i className="bi bi-check2 text-emerald-400 ml-auto opacity-70" />}
                 </div>
               );
             })}
           </nav>
         </aside>
 
-        <main className="flex flex-1 flex-col items-center px-6 py-14">
-          <h1 className="text-center font-display text-4xl font-extrabold tracking-tight text-accent sm:text-5xl">
-            VERIFY YOUR INTENT
-          </h1>
-          <p className="mt-4 max-w-xl text-center text-sm text-muted sm:text-base">
-            Tell NETTOAI what you want to do. Your instruction will be analyzed before any transaction is executed.
-          </p>
+        <main className="flex flex-1 flex-col items-center justify-center px-6 py-10 relative z-10">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
+          
+          <div className="text-center z-10 mb-10">
+              <h1 className="font-display text-4xl sm:text-6xl font-light tracking-tight text-white mb-4">
+                Verify Your <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-accent to-purple-400">Intent</span>
+              </h1>
+              <p className="max-w-xl text-center text-sm sm:text-base text-gray-400 font-light leading-relaxed">
+                Describe what you want to do in natural language. Our sovereign Guardian model will analyze and verify it before execution.
+              </p>
+          </div>
 
-          <div className="mt-10 w-full max-w-2xl rounded-lg border border-border bg-bg-panel/40 p-5">
-            <div className="flex items-center justify-between">
-              <span className="flex items-center gap-2 font-mono text-xs text-gray-300">
-                <i className="bi bi-keyboard" /> NATURAL LANGUAGE INPUT
+          <div className="glass-panel w-full max-w-2xl rounded-2xl p-6 sm:p-8 animate-fade-in z-10">
+            <div className="flex items-center justify-between mb-4">
+              <span className="flex items-center gap-2 font-mono text-xs font-semibold tracking-wider text-accent uppercase">
+                <i className="bi bi-terminal" /> Natural Language
               </span>
-              <span className="rounded border border-accent/60 px-2 py-1 font-mono text-[10px] text-accent">
-                {intent ? "READY" : "AWAITING INPUT"}
+              <span className={`px-2.5 py-1 rounded-full font-mono text-[10px] tracking-widest font-bold border transition-colors ${intent ? 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400' : 'border-white/10 bg-black/40 text-muted/60'}`}>
+                {intent ? "READY" : "AWAITING"}
               </span>
             </div>
 
-            <div className="relative mt-3">
-              <textarea
-                value={intent}
-                onChange={(e) => setIntent(e.target.value)}
-                placeholder="Describe your transaction in natural language..."
-                rows={5}
-                className="w-full resize-none rounded-md border border-border bg-bg px-4 py-3 text-sm text-gray-100 placeholder:text-muted focus:border-accent focus:outline-none"
-              />
-              <button
-                type="button"
-                aria-label="Voice input"
-                className="absolute bottom-3 right-3 text-muted transition-colors hover:text-accent"
-              >
-                <i className="bi bi-mic" />
-              </button>
+            <div className="relative group">
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-accent to-purple-600 rounded-xl opacity-20 group-hover:opacity-40 blur transition duration-500" />
+              <div className="relative">
+                <textarea
+                  value={intent}
+                  onChange={(e) => setIntent(e.target.value)}
+                  placeholder="e.g. 'Transfer 100 USDT to 0x123...'"
+                  rows={4}
+                  className="w-full resize-none rounded-xl border border-white/10 bg-black/60 px-5 py-4 text-base text-gray-100 placeholder:text-gray-600 focus:border-accent focus:ring-1 focus:ring-accent focus:outline-none transition-all shadow-inner font-sans"
+                />
+                <button
+                  type="button"
+                  aria-label="Voice input"
+                  className="absolute bottom-4 right-4 h-8 w-8 flex items-center justify-center rounded-lg bg-white/5 text-muted hover:bg-accent/20 hover:text-accent transition-all text-sm border border-white/5"
+                >
+                  <i className="bi bi-mic-fill" />
+                </button>
+              </div>
             </div>
 
-            <p className="mt-5 font-mono text-xs text-muted">EXAMPLES:</p>
-            <div className="mt-2 flex flex-wrap gap-2">
+            <p className="mt-6 mb-3 font-mono text-[10px] uppercase font-bold tracking-widest text-muted/70">Suggestions</p>
+            <div className="flex flex-wrap gap-2.5 mb-8">
               {EXAMPLES.map((example) => (
                 <button
                   key={example}
                   type="button"
                   onClick={() => handleExampleClick(example)}
-                  className="rounded-md border border-border bg-bg px-3 py-2 font-mono text-xs text-gray-300 transition-colors hover:border-accent hover:text-accent"
+                  className="rounded-full border border-white/10 bg-white/5 px-4 py-2 font-sans text-xs font-medium text-gray-300 transition-all hover:bg-accent/10 hover:border-accent/40 hover:text-white"
                 >
-                  &quot;{example}&quot;
+                  {example}
                 </button>
               ))}
             </div>
@@ -172,26 +186,33 @@ export default function IntentInput({
             <button
               type="button"
               onClick={handleCheck}
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-md bg-accent py-3.5 font-display text-lg font-extrabold tracking-tight text-bg transition-colors hover:bg-accent/90"
+              disabled={!intent.trim()}
+              className="group relative w-full flex items-center justify-center overflow-hidden rounded-xl bg-gradient-to-r from-accent/90 to-blue-600/90 py-4 font-display text-lg font-semibold tracking-wide text-white transition-all hover:from-accent hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(56,189,248,0.2)] hover:shadow-[0_0_30px_rgba(56,189,248,0.4)]"
             >
-              <i className="bi bi-shield-fill-check" /> NETTOAI CHECK
+              <div className="absolute inset-0 w-full h-full bg-white/20 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <span className="relative flex items-center gap-2">
+                 <i className="bi bi-shield-check" /> Execute Check
+              </span>
             </button>
 
-            <p className="mt-3 flex items-center justify-center gap-1.5 font-mono text-[11px] text-muted">
-              <i className="bi bi-info-circle" /> NOTHING WILL BE EXECUTED DURING THIS CHECK.
+            <p className="mt-4 flex items-center justify-center gap-1.5 font-sans text-xs text-muted/60 font-medium">
+              <i className="bi bi-lock-fill" /> Execution blocked until verified by Guardian model
             </p>
           </div>
         </main>
       </div>
 
-      <footer className="flex h-11 w-full items-center justify-between border-t border-border bg-bg-panel/60 px-6 font-mono text-[11px]">
-        <span className="text-accent">NETTOAI VERIFIED EXECUTION LAYER {version}</span>
-        <div className="flex items-center gap-6 text-muted">
-          <span>Network: <span className="text-gray-300">{network}</span></span>
-          <span className="text-gray-300">{displayWallet}</span>
-          <span className="flex items-center gap-1.5">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-accent" />
-            Latency: <span className="text-gray-300">{latencyMs}ms</span>
+      <footer className="flex h-12 w-full items-center justify-between border-t border-white/5 bg-black/20 px-6 backdrop-blur-md">
+        <span className="font-mono text-[10px] font-bold tracking-widest uppercase text-accent/80">NettoAI Guardian {version}</span>
+        <div className="flex items-center gap-6 text-xs text-muted/70 font-mono">
+          <span className="flex gap-2">NET: <span className="text-gray-300 font-medium">{network}</span></span>
+          <span className="text-gray-300 font-medium">{displayWallet}</span>
+          <span className="flex items-center gap-2">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-accent"></span>
+            </span>
+            <span className="text-gray-300 font-medium">{latencyMs}ms</span>
           </span>
         </div>
       </footer>
