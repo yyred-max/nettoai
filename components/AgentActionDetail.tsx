@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import PipelineSidebar from "./PipelineSidebar";
+import LoadingState from "./LoadingState";
 
 type AgentActionDetailProps = {
     userIntent: string;
@@ -25,6 +27,21 @@ export default function AgentActionDetail({
     const recipient = action?.recipient || "—";
     const amount = action?.amount || "—";
     const token = action?.token || "USDT";
+
+    // Recognition rather than recall + error prevention: a truncated
+    // address the user can't verify is dangerous for a money transfer.
+    // Let them copy the full value and get explicit confirmation it worked.
+    const [copied, setCopied] = useState(false);
+    const copyRecipient = async () => {
+        if (!recipient || recipient === "—") return;
+        try {
+            await navigator.clipboard.writeText(recipient);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1500);
+        } catch (err) {
+            console.error("Failed to copy address:", err);
+        }
+    };
 
     return (
         <div className="flex min-h-screen flex-col bg-transparent">
@@ -53,12 +70,12 @@ export default function AgentActionDetail({
 
             <div className="flex flex-1 overflow-hidden relative">
                 <div className="hidden sm:block z-10">
-                    <PipelineSidebar activeStep="agent_action" showConnectButton />
+                    <PipelineSidebar activeStep="agent_action" wallet={wallet} />
                 </div>
                 <main className="flex-1 px-6 py-14 sm:px-10 overflow-y-auto relative z-10 w-full">
                     <div className="mx-auto max-w-4xl relative">
                         <div className="absolute top-10 right-10 w-[400px] h-[400px] bg-purple-500/5 rounded-full blur-[100px] pointer-events-none" />
-                        
+
                         <div className="flex flex-wrap items-center justify-between gap-4 mb-10 bg-gradient-to-r from-accent/5 to-transparent p-6 rounded-2xl border border-white/5">
                             <div>
                                 <h1 className="font-display text-4xl font-light tracking-tight text-white">Agent <span className="font-semibold text-transparent bg-clip-text bg-gradient-to-r from-accent to-purple-400">Action</span></h1>
@@ -94,8 +111,21 @@ export default function AgentActionDetail({
                                         <p className="font-mono text-sm text-gray-100 font-semibold tracking-wide">transfer</p>
                                     </div>
                                     <div className="rounded-xl border border-white/5 bg-black/40 px-4 py-3 shadow-inner">
-                                        <p className="font-mono text-[9px] tracking-widest font-bold uppercase text-muted/70 mb-1">Recipient</p>
-                                        <p className="font-mono text-xs text-accent truncate" title={recipient}>{recipient}</p>
+                                        <div className="mb-1 flex items-center justify-between gap-2">
+                                            <p className="font-mono text-[9px] tracking-widest font-bold uppercase text-muted/70">Recipient</p>
+                                            <button
+                                                type="button"
+                                                onClick={copyRecipient}
+                                                aria-label="Copy full recipient address"
+                                                className="shrink-0 rounded p-0.5 text-muted/60 transition-colors hover:text-accent"
+                                            >
+                                                <i className={`bi ${copied ? "bi-check2" : "bi-clipboard"} text-[11px]`} />
+                                            </button>
+                                        </div>
+                                        <p className="font-mono text-xs text-accent break-all">{recipient}</p>
+                                        {copied && (
+                                            <p className="mt-1 font-mono text-[9px] text-emerald-400">Copied to clipboard</p>
+                                        )}
                                     </div>
                                     <div className="rounded-xl border border-white/5 bg-black/40 px-4 py-3 shadow-inner">
                                         <p className="font-mono text-[9px] tracking-widest font-bold uppercase text-muted/70 mb-1">Amount</p>
@@ -113,10 +143,13 @@ export default function AgentActionDetail({
                                             <span className="h-2 w-2 rounded-full bg-yellow-500/50" />
                                             <span className="h-2 w-2 rounded-full bg-emerald-500/50" />
                                         </div>
-                                        <span className="text-[10px] uppercase">sysout</span>
+                                        <span className="text-[10px] uppercase">Technical preview (sysout)</span>
                                     </div>
                                     <p className="text-accent/90 break-all leading-relaxed">
                                         <span className="text-purple-400">transfer</span>(recipient: <span className="text-amber-200">{recipient}</span>, amount: <span className="text-emerald-300">{amount}</span> <span className="text-gray-400">{token}</span>)
+                                    </p>
+                                    <p className="mt-2 text-[10px] text-muted/50 normal-case">
+                                        This is the exact function call that will be sent on-chain — shown for transparency, not required reading.
                                     </p>
                                 </div>
                             </div>
@@ -133,13 +166,13 @@ export default function AgentActionDetail({
                                             <div className="h-6 w-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
                                                 <i className="bi bi-check-lg text-emerald-400 text-xs" />
                                             </div>
-                                            <span className="truncate">Recipient: {recipient}</span>
+                                            <span className="truncate" title={recipient}>Recipient: {recipient}</span>
                                         </span>
                                         <span className="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 font-mono text-[9px] font-bold text-emerald-400 uppercase tracking-widest shrink-0">Detected</span>
                                     </div>
                                     <div className="flex items-center justify-between rounded-xl border border-white/5 bg-black/20 px-5 py-4 transition-colors hover:bg-white/5">
                                         <span className="flex items-center gap-3 font-mono text-sm text-gray-200">
-                                           <div className="h-6 w-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
+                                            <div className="h-6 w-6 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0">
                                                 <i className="bi bi-check-lg text-emerald-400 text-xs" />
                                             </div>
                                             Amount: {amount} {token}
@@ -159,9 +192,7 @@ export default function AgentActionDetail({
                                     </span>
                                 </div>
                                 <p className="text-sm font-light text-gray-400 leading-relaxed mb-6">The generated action above will now be evaluated against the security execution policy limits before authorization.</p>
-                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-white/5 border border-white/10 shadow-inner">
-                                    <div className="h-full w-1/3 rounded-full bg-gradient-to-r from-gray-500 to-gray-400" />
-                                </div>
+                                <LoadingState label="Evaluating policy limits" tone="pending" />
                             </div>
                         </div>
 
@@ -174,9 +205,10 @@ export default function AgentActionDetail({
                             </div>
                             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                             <div className="flex flex-col items-center gap-3 z-10">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-accent/40 bg-accent/10 text-accent shadow-[0_0_20px_rgba(56,189,248,0.2)]">
+                                <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-accent/40 bg-accent/10 text-accent shadow-[0_0_20px_rgba(56,189,248,0.2)] animate-pulse">
                                     <i className="bi bi-robot text-2xl" />
                                 </div>
+                                <span className="font-mono text-[10px] tracking-widest font-bold text-accent/80 uppercase">Processing</span>
                             </div>
                             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-accent/50 to-transparent" />
                             <div className="flex flex-col items-center gap-3 group">
