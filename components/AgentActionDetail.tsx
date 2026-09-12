@@ -69,7 +69,7 @@ export default function AgentActionDetail({
 
             <div className="flex flex-1 overflow-hidden relative">
                 <div className="hidden sm:block z-10">
-                    <PipelineSidebar activeStep="agent_action" wallet={wallet} />
+                    <PipelineSidebar activeStep="agent_action" wallet={wallet} isLoading={isLoading} />
                 </div>
                 <main className="flex-1 px-6 py-14 sm:px-10 overflow-y-auto relative z-10 w-full">
                     <div className="mx-auto max-w-4xl relative">
