@@ -12,6 +12,7 @@ type AgentActionDetailProps = {
     onViewProvenance: () => void;
     network?: string;
     wallet?: string | null;
+    isLoading?: boolean; // <-- Prop baru
 };
 
 export default function AgentActionDetail({
@@ -22,15 +23,13 @@ export default function AgentActionDetail({
     onViewProvenance,
     network = "BSC TESTNET",
     wallet = null,
+    isLoading = false, // <-- Default false
 }: AgentActionDetailProps) {
     const displayWallet = wallet || "0x...";
     const recipient = action?.recipient || "—";
     const amount = action?.amount || "—";
     const token = action?.token || "USDT";
 
-    // Recognition rather than recall + error prevention: a truncated
-    // address the user can't verify is dangerous for a money transfer.
-    // Let them copy the full value and get explicit confirmation it worked.
     const [copied, setCopied] = useState(false);
     const copyRecipient = async () => {
         if (!recipient || recipient === "—") return;
@@ -182,18 +181,29 @@ export default function AgentActionDetail({
                                 </div>
                             </div>
 
+                            {/* ── PERBAIKAN DI SINI ─────────────────────────────── */}
                             <div className="glass-panel rounded-2xl p-6">
                                 <div className="flex items-center justify-between mb-5">
                                     <span className="flex items-center gap-2 font-mono text-[10px] tracking-widest font-bold text-gray-400 uppercase">
                                         <i className="bi bi-shield-check text-accent" /> Policy Check
                                     </span>
                                     <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-2.5 py-1 font-mono text-[9px] tracking-widest text-muted uppercase font-bold">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-gray-400" /> PENDING
+                                        <span className={`h-1.5 w-1.5 rounded-full ${isLoading ? "bg-accent animate-pulse" : "bg-gray-400"}`} />
+                                        {isLoading ? "CHECKING" : "PENDING"}
                                     </span>
                                 </div>
-                                <p className="text-sm font-light text-gray-400 leading-relaxed mb-6">The generated action above will now be evaluated against the security execution policy limits before authorization.</p>
-                                <LoadingState label="Evaluating policy limits" tone="pending" />
+                                <p className="text-sm font-light text-gray-400 leading-relaxed mb-6">
+                                    {isLoading
+                                        ? "NettoAI is analyzing your intent and generating the secure execution plan..."
+                                        : "The generated action above will now be evaluated against the security execution policy limits before authorization."}
+                                </p>
+                                {/* Gunakan tone="checking" (biru) jika sedang loading, "pending" (abu-abu) jika tidak */}
+                                <LoadingState
+                                    label={isLoading ? "NettoAI is analyzing" : "Evaluating policy limits"}
+                                    tone={isLoading ? "checking" : "pending"}
+                                />
                             </div>
+                            {/* ──────────────────────────────────────────────────── */}
                         </div>
 
                         <div className="mt-8 flex items-center justify-center gap-4 sm:gap-6 glass-panel rounded-2xl px-6 py-8 relative z-10">
@@ -205,7 +215,7 @@ export default function AgentActionDetail({
                             </div>
                             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/20 to-transparent" />
                             <div className="flex flex-col items-center gap-3 z-10">
-                                <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-accent/40 bg-accent/10 text-accent shadow-[0_0_20px_rgba(56,189,248,0.2)] animate-pulse">
+                                <div className={`flex h-16 w-16 items-center justify-center rounded-xl border border-accent/40 bg-accent/10 text-accent shadow-[0_0_20px_rgba(56,189,248,0.2)] ${isLoading ? 'animate-pulse' : ''}`}>
                                     <i className="bi bi-robot text-2xl" />
                                 </div>
                                 <span className="font-mono text-[10px] tracking-widest font-bold text-accent/80 uppercase">Processing</span>
@@ -223,7 +233,11 @@ export default function AgentActionDetail({
                             <button onClick={onBack} className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-black/40 px-6 py-4 font-mono text-[11px] uppercase tracking-widest font-bold text-gray-300 transition-all hover:bg-white/5 hover:text-white">
                                 <i className="bi bi-arrow-left" /> Back to Check
                             </button>
-                            <button onClick={onViewProvenance} className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-blue-600 px-6 py-4 font-display font-semibold tracking-wide text-white transition-all hover:from-accent hover:to-blue-500 shadow-[0_4px_20px_rgba(56,189,248,0.3)] hover:shadow-[0_4px_25px_rgba(56,189,248,0.5)] group">
+                            <button
+                                onClick={onViewProvenance}
+                                disabled={isLoading}
+                                className="w-full sm:w-auto flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-accent to-blue-600 px-6 py-4 font-display font-semibold tracking-wide text-white transition-all hover:from-accent hover:to-blue-500 shadow-[0_4px_20px_rgba(56,189,248,0.3)] hover:shadow-[0_4px_25px_rgba(56,189,248,0.5)] group disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
                                 View Field Provenance <i className="bi bi-arrow-right group-hover:translate-x-1 transition-transform" />
                             </button>
                         </div>

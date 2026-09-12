@@ -24,11 +24,6 @@ type UIStatus =
   | "error";
 
 type ResultData = {
-  /**
-   * ALLOW     → Guardian lulus, menunggu konfirmasi eksekusi user
-   * BLOCKED   → Guardian menolak (policy / risk violation)
-   * NO_ACTION → Agent tidak memanggil tool (bukan keputusan keamanan)
-   */
   status: "ALLOW" | "BLOCKED" | "NO_ACTION";
   decisionId: string;
   riskScore: number;
@@ -83,9 +78,6 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) {
-        // ── Auto Reconciliation fallback ─────────────────────────────────────
-        // Jika request gagal atau 409 (misal broadcast_pending atau timeout),
-        // poll endpoint /api/agent/status untuk cek apakah txHash sudah tersimpan.
         const statusRes = await fetch(`/api/agent/status?decisionId=${decisionId}`).catch(() => null);
         if (statusRes && statusRes.ok) {
           const statusData = await statusRes.json();
@@ -143,8 +135,21 @@ export default function Home() {
     case "idle":
       return <IntentInput onCheck={handleCheck} wallet={walletAddress ?? undefined} />;
 
+    // ── PERBAIKAN DI SINI ─────────────────────────────────────────────
+    // Tetap render AgentActionDetail, tapi beri tahu bahwa ini sedang loading.
     case "loading":
-      return <LoadingState message="NettoAI is analyzing..." wallet={walletAddress ?? undefined} />;
+      return (
+        <AgentActionDetail
+          userIntent={intent}
+          action={{}} // Objek kosong sebagai placeholder
+          intentData={{}} // Objek kosong sebagai placeholder
+          onBack={() => setStatus("idle")}
+          onViewProvenance={() => { }} // Tidak ada aksi saat loading
+          wallet={walletAddress ?? undefined}
+          isLoading={true} // Prop baru untuk memberi tahu komponen
+        />
+      );
+    // ──────────────────────────────────────────────────────────────────
 
     case "action_detail":
       return resultData ? (
@@ -155,6 +160,7 @@ export default function Home() {
           onBack={() => setStatus("idle")}
           onViewProvenance={() => setStatus("provenance")}
           wallet={walletAddress ?? undefined}
+          isLoading={false}
         />
       ) : null;
 
@@ -219,11 +225,11 @@ export default function Home() {
 
     case "error":
       return (
-        <ErrorScreen 
-          error={errorDetails?.message || null} 
+        <ErrorScreen
+          error={errorDetails?.message || null}
           note={errorDetails?.note}
           txHash={errorDetails?.txHash}
-          onReset={handleReset} 
+          onReset={handleReset}
         />
       );
 
