@@ -6,7 +6,7 @@ dotenv.config({ path: ".env.local" });
 async function main() {
     console.log("=== NETTOAI AGENT TEST ===");
 
-    const userInput = "Send 50 USDT to Alice.";
+    const userInput = "Send 50 USDT to 0x742D35cc6634c0532925a3b844Bc9E7598F0b0d8.";
 
     const result = await runAgent(userInput);
 
