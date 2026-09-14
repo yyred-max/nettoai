@@ -50,7 +50,8 @@ export default function Home() {
       const res = await fetch("/api/agent", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userInput }),
+        // ✅ Kirim walletAddress untuk self-transfer detection
+        body: JSON.stringify({ userInput, walletAddress }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "NettoAI check failed");
@@ -78,6 +79,7 @@ export default function Home() {
       });
       const data = await res.json();
       if (!res.ok) {
+        // ── Auto Reconciliation fallback ──────────────────────────────────
         const statusRes = await fetch(`/api/agent/status?decisionId=${decisionId}`).catch(() => null);
         if (statusRes && statusRes.ok) {
           const statusData = await statusRes.json();
@@ -135,21 +137,19 @@ export default function Home() {
     case "idle":
       return <IntentInput onCheck={handleCheck} wallet={walletAddress ?? undefined} />;
 
-    // ── PERBAIKAN DI SINI ─────────────────────────────────────────────
-    // Tetap render AgentActionDetail, tapi beri tahu bahwa ini sedang loading.
+    // ── Loading: tetap render AgentActionDetail dengan placeholder ──
     case "loading":
       return (
         <AgentActionDetail
           userIntent={intent}
-          action={{}} // Objek kosong sebagai placeholder
-          intentData={{}} // Objek kosong sebagai placeholder
+          action={{}}
+          intentData={{}}
           onBack={() => setStatus("idle")}
-          onViewProvenance={() => { }} // Tidak ada aksi saat loading
+          onViewProvenance={() => { }}
           wallet={walletAddress ?? undefined}
-          isLoading={true} // Prop baru untuk memberi tahu komponen
+          isLoading={true}
         />
       );
-    // ──────────────────────────────────────────────────────────────────
 
     case "action_detail":
       return resultData ? (

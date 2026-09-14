@@ -8,7 +8,8 @@ import { decisionStore } from '@/lib/store/decisionStore';
 
 export async function POST(req: NextRequest) {
     try {
-        const { userInput } = await req.json();
+        // ✅ Terima walletAddress dari frontend (untuk self-transfer detection)
+        const { userInput, walletAddress } = await req.json();
 
         if (!userInput || typeof userInput !== 'string' || userInput.trim() === '') {
             return NextResponse.json(
@@ -18,7 +19,8 @@ export async function POST(req: NextRequest) {
         }
 
         // 1. Jalankan agent → dapat intent, action, status, riskScore, riskLevel, reasons
-        const result = await runAgent(userInput);
+        //    ✅ Teruskan walletAddress untuk pre-flight safety check
+        const result = await runAgent(userInput, walletAddress);
         const { intent, action, status, riskScore, riskLevel, reasons } = result;
 
         // Pastikan action ada (fallback)
@@ -55,7 +57,7 @@ export async function POST(req: NextRequest) {
 
         // 5. Response (tanpa execute)
         return NextResponse.json({
-            status, // ✅ langsung dari runAgent, tidak redeclare
+            status,
             decisionId,
             riskScore,
             riskLevel,

@@ -28,11 +28,17 @@ export type RunAgentResult = {
 /**
  * Jalankan agent dengan user input.
  * 1. Parse intent secara deterministik (tanpa LLM)
- * 2. Buat tools dengan intent
+ * 2. Buat tools dengan intent + senderAddress (untuk self-transfer check)
  * 3. Jalankan Gemini dengan tools
  * 4. Ambil hasil tool call dan tentukan status
+ *
+ * @param userInput       - Natural language input dari user
+ * @param senderAddress   - Alamat wallet user (opsional, untuk self-transfer detection)
  */
-export async function runAgent(userInput: string): Promise<RunAgentResult> {
+export async function runAgent(
+    userInput: string,
+    senderAddress?: string
+): Promise<RunAgentResult> {
     // 1. Parse intent dari user input (deterministic, tanpa LLM)
     const parseResult = parseUserIntent(userInput, 97);
     if (!parseResult.success) {
@@ -40,8 +46,8 @@ export async function runAgent(userInput: string): Promise<RunAgentResult> {
     }
     const intent = parseResult.intent;
 
-    // 2. Buat tools dengan intent
-    const tools = createAgentTools(intent);
+    // 2. Buat tools dengan intent + senderAddress
+    const tools = createAgentTools(intent, senderAddress);
 
     // 3. Jalankan agent (Gemini)
     const result = await generateText({
@@ -78,8 +84,7 @@ If the user request requires a transfer, use the transferUSDT tool.
         stopWhen: stepCountIs(3),
     });
 
-    // 🔍 Minimal debug log — uncomment bagian steps apabila perlu investigasi
-    // mendalam kenapa tool tidak terpanggil (model refuse, salah paham prompt, dsb).
+    // 🔍 Debug log
     console.log('[NettoAI][debug] finishReason:', result.finishReason);
     if (result.finishReason !== 'tool-calls' && result.finishReason !== 'stop') {
         console.log('[NettoAI][debug] text:', result.text?.slice(0, 200));
@@ -97,12 +102,15 @@ If the user request requires a transfer, use the transferUSDT tool.
     // Ambil dari .output (Vercel AI SDK v3.x behavior) atau .result (fallback)
     const toolResult = (transferResult as any)?.output ?? (transferResult as any)?.result;
 
-    console.log('[NettoAI][debug] jumlah steps:', result.steps?.length, 'toolResults per step:', result.steps?.map(s => s.toolResults?.length || 0));
+    console.log(
+        '[NettoAI][debug] jumlah steps:',
+        result.steps?.length,
+        'toolResults per step:',
+        result.steps?.map((s) => s.toolResults?.length || 0)
+    );
 
-    // ⚠️ Kasus penting: model tidak memanggil tool sama sekali.
-    // Ini BUKAN "BLOCKED" (bukan hasil keputusan keamanan) — ini kegagalan
-    // agent untuk menghasilkan action. Jangan disamarkan jadi BLOCKED,
-    // supaya tidak terlihat seperti pelanggaran kebijakan padahal bukan.
+    // ⚠️ Model tidak memanggil tool sama sekali.
+    // Ini BUKAN "BLOCKED" — ini kegagalan agent menghasilkan action.
     if (!toolResult) {
         return {
             intent,
@@ -128,9 +136,7 @@ If the user request requires a transfer, use the transferUSDT tool.
     //    BLOCKED                            → BLOCKED (policy / risk violation)
     //    Nilai lain yang tidak dikenali     → BLOCKED (fail-safe)
     const status: RunAgentResult['status'] =
-        toolResult.status === 'AUTHORIZED'
-            ? 'ALLOW'
-            : 'BLOCKED';
+        toolResult.status === 'AUTHORIZED' ? 'ALLOW' : 'BLOCKED';
 
     // 6. Ambil action dari toolResult, atau fallback ke intent
     const action = toolResult.action || {
