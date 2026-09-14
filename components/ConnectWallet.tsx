@@ -147,27 +147,36 @@ export default function ConnectWallet({
 
             {/* Hero / verify session */}
             <section className="flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">
-                <div className="mb-10 flex h-20 w-20 items-center justify-center rounded-lg border border-blue-400/70 bg-white/5">
-                    <i className="bi bi-unlock text-3xl text-blue-400" />
+                {/* ✅ FIX: Icon placeholder dengan glow — bukan kotak biru kosong */}
+                <div className="relative mb-10">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-blue-500/40 to-purple-500/40 rounded-2xl blur-[40px]" />
+                    <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border border-blue-400/40 bg-gradient-to-br from-blue-500/10 to-purple-500/10 backdrop-blur-xl shadow-[0_0_40px_rgba(56,189,248,0.3)]">
+                        <i className="bi bi-shield-lock text-4xl text-blue-400 drop-shadow-[0_0_10px_rgba(56,189,248,0.6)]" />
+                    </div>
                 </div>
 
                 <h1 className="font-display text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
                     VERIFY BEFORE YOU EXECUTE
                 </h1>
 
-                {/* ── Value Proposition (diperjelas) ── */}
+                {/* ── Value Proposition ── */}
                 <p className="mt-5 max-w-2xl text-base text-white/80 sm:text-lg leading-relaxed">
                     <strong className="text-white font-semibold">
                         NettoAI memverifikasi setiap field
                     </strong>{" "}
                     dari transaksi AI-agent kamu — recipient, amount, token, chain —
-                    <span className="text-blue-300"> sebelum ada satu pun yang dieksekusi on-chain.</span>
+                    <span className="text-blue-300">
+                        {" "}
+                        sebelum ada satu pun yang dieksekusi on-chain.
+                    </span>
                 </p>
 
                 <p className="mt-3 max-w-xl text-sm text-white/50 leading-relaxed">
                     Bukan sekadar policy check.{" "}
-                    <span className="text-blue-400 font-medium">Field-level provenance</span> memastikan
-                    tidak ada nilai yang diubah oleh AI tanpa jejak.
+                    <span className="text-blue-400 font-medium">
+                        Field-level provenance
+                    </span>{" "}
+                    memastikan tidak ada nilai yang diubah oleh AI tanpa jejak.
                 </p>
 
                 {!isMetaMask && (
