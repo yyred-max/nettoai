@@ -4,12 +4,14 @@ import { useState, useEffect } from "react";
 
 type ConnectWalletProps = {
     onConnect?: (address: string) => void;
+    onEnterDemo?: () => void;
     network?: string;
     version?: string;
 };
 
 export default function ConnectWallet({
     onConnect,
+    onEnterDemo,
     network = "BSC TESTNET",
     version = "v1.0.42",
 }: ConnectWalletProps) {
@@ -18,7 +20,6 @@ export default function ConnectWallet({
     const [error, setError] = useState<string | null>(null);
     const [isMetaMask, setIsMetaMask] = useState(false);
 
-    // Cek apakah MetaMask terpasang
     useEffect(() => {
         if (typeof window !== "undefined") {
             const ethereum = (window as any).ethereum;
@@ -26,13 +27,11 @@ export default function ConnectWallet({
         }
     }, []);
 
-    // Cek koneksi yang sudah ada sebelumnya
     useEffect(() => {
         const checkConnection = async () => {
             if (typeof window === "undefined") return;
             const ethereum = (window as any).ethereum;
             if (!ethereum) return;
-
             try {
                 const accounts = await ethereum.request({ method: "eth_accounts" });
                 if (accounts.length > 0) {
@@ -49,25 +48,18 @@ export default function ConnectWallet({
     const connectWallet = async () => {
         if (typeof window === "undefined") return;
         const ethereum = (window as any).ethereum;
-
         if (!ethereum) {
             setError("MetaMask not detected. Please install MetaMask extension.");
             return;
         }
-
         setIsConnecting(true);
         setError(null);
-
         try {
-            // Request account access
-            const accounts = await ethereum.request({
-                method: "eth_requestAccounts",
-            });
+            const accounts = await ethereum.request({ method: "eth_requestAccounts" });
             const account = accounts[0];
             setAddress(account);
             if (onConnect) onConnect(account);
 
-            // Cek network (harus BSC Testnet, chainId = 97)
             const chainId = await ethereum.request({ method: "eth_chainId" });
             if (chainId !== "0x61") {
                 setError("Please switch to BSC Testnet (Chain ID: 97).");
@@ -77,12 +69,10 @@ export default function ConnectWallet({
                         params: [{ chainId: "0x61" }],
                     });
                 } catch (switchError) {
-                    // User mungkin menolak switch network
                     console.warn("Network switch rejected", switchError);
                 }
             }
 
-            // Listen for account changes
             ethereum.on("accountsChanged", (newAccounts: string[]) => {
                 if (newAccounts.length > 0) {
                     setAddress(newAccounts[0]);
@@ -92,11 +82,7 @@ export default function ConnectWallet({
                     if (onConnect) onConnect("");
                 }
             });
-
-            // Listen for chain changes
-            ethereum.on("chainChanged", () => {
-                window.location.reload();
-            });
+            ethereum.on("chainChanged", () => window.location.reload());
         } catch (err: any) {
             console.error("Connection error:", err);
             if (err.code === 4001) {
@@ -169,15 +155,24 @@ export default function ConnectWallet({
                     VERIFY BEFORE YOU EXECUTE
                 </h1>
 
-                <p className="mt-5 max-w-md text-base text-white/60 sm:text-lg">
-                    {address
-                        ? `Connected: ${shortenAddress(address)}`
-                        : "Connect your wallet to establish a secure verification session."}
+                {/* ── Value Proposition (diperjelas) ── */}
+                <p className="mt-5 max-w-2xl text-base text-white/80 sm:text-lg leading-relaxed">
+                    <strong className="text-white font-semibold">
+                        NettoAI memverifikasi setiap field
+                    </strong>{" "}
+                    dari transaksi AI-agent kamu — recipient, amount, token, chain —
+                    <span className="text-blue-300"> sebelum ada satu pun yang dieksekusi on-chain.</span>
+                </p>
+
+                <p className="mt-3 max-w-xl text-sm text-white/50 leading-relaxed">
+                    Bukan sekadar policy check.{" "}
+                    <span className="text-blue-400 font-medium">Field-level provenance</span> memastikan
+                    tidak ada nilai yang diubah oleh AI tanpa jejak.
                 </p>
 
                 {!isMetaMask && (
-                    <p className="mt-2 text-sm text-yellow-400">
-                        ⚠️ MetaMask not detected. Please install the extension.
+                    <p className="mt-4 text-sm text-yellow-400">
+                        ⚠️ MetaMask not detected. You can still try Demo Mode below.
                     </p>
                 )}
 
@@ -191,17 +186,40 @@ export default function ConnectWallet({
                         DISCONNECT WALLET
                     </button>
                 ) : (
-                    <button
-                        onClick={connectWallet}
-                        disabled={isConnecting || !isMetaMask}
-                        className="mt-10 flex items-center gap-2 rounded-md bg-blue-500 px-6 py-3 font-mono text-sm font-bold tracking-wide text-black transition-colors hover:bg-blue-400 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isConnecting ? "CONNECTING..." : "CONNECT WALLET →"}
-                    </button>
+                    <div className="mt-10 flex flex-col items-center gap-4">
+                        <button
+                            onClick={connectWallet}
+                            disabled={isConnecting || !isMetaMask}
+                            className="flex items-center gap-2 rounded-md bg-blue-500 px-6 py-3 font-mono text-sm font-bold tracking-wide text-black transition-colors hover:bg-blue-400 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isConnecting ? "CONNECTING..." : "CONNECT WALLET →"}
+                        </button>
+
+                        {/* ── DEMO MODE BUTTON ── */}
+                        <div className="flex items-center gap-3 text-[10px] font-mono uppercase tracking-widest text-white/30">
+                            <span className="h-px w-10 bg-white/10" />
+                            atau
+                            <span className="h-px w-10 bg-white/10" />
+                        </div>
+
+                        <button
+                            onClick={onEnterDemo}
+                            className="group flex items-center gap-2 rounded-md border border-white/20 bg-white/5 px-6 py-3 font-mono text-sm font-bold tracking-wide text-white/90 transition-colors hover:border-blue-400/60 hover:bg-blue-500/10 hover:text-white focus:outline-none"
+                        >
+                            <i className="bi bi-play-circle text-blue-400" />
+                            TRY DEMO — TANPA WALLET
+                            <i className="bi bi-arrow-right transition-transform group-hover:translate-x-1" />
+                        </button>
+                        <p className="text-[10px] text-white/40 font-mono">
+                            Read-only mode · transaksi tidak akan dieksekusi
+                        </p>
+                    </div>
                 )}
 
-                <p className="mt-5 font-mono text-xs text-white/30">
-                    Requires a Web3 compatible browser extension.
+                <p className="mt-6 font-mono text-xs text-white/30">
+                    {address
+                        ? `Connected: ${shortenAddress(address)}`
+                        : "Requires a Web3 compatible browser extension."}
                 </p>
             </section>
 
