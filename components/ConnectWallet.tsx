@@ -121,38 +121,37 @@ export default function ConnectWallet({
     };
 
     return (
-        <main className="flex min-h-screen flex-col bg-black">
+        <main className="flex min-h-screen flex-col bg-transparent">
             {/* Top nav */}
-            <header className="flex h-14 w-full items-center justify-between border-b border-white/10 bg-white/5 px-6">
+            <header className="flex h-16 w-full items-center justify-between border-b border-white/5 bg-black/20 px-6 backdrop-blur-md animate-fade-in">
                 <div className="flex items-center gap-3">
-                    <span className="font-display text-lg font-extrabold tracking-tight text-blue-400">
-                        NETTOAI
+                    <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-gradient-to-br from-accent to-blue-600 shadow-[0_0_15px_rgba(56,189,248,0.4)] animate-pulse-glow">
+                        <i className="bi bi-shield-fill-check text-white text-sm" />
+                    </div>
+                    <span className="font-display text-xl font-bold tracking-wide text-white">
+                        NETTO<span className="text-accent font-light">AI</span>
                     </span>
-                    <span className="text-white/20">|</span>
-                    <span className="font-mono text-xs text-white/50">
+                    <span className="text-border mx-1">|</span>
+                    <span className="font-mono text-xs text-muted/70 tracking-widest uppercase hidden sm:inline">
                         Verified Execution Layer
                     </span>
                 </div>
 
-                <div className="flex items-center gap-3 font-mono text-xs text-white/50">
+                <div className="hidden items-center gap-3 font-mono text-xs text-white/50 md:flex">
                     <span>
                         Network: <span className="text-white">{network}</span>
                     </span>
                     <span className="text-white/20">|</span>
-                    <span>
-                        Wallet:{" "}
-                        <span className="text-white">
-                            {address ? shortenAddress(address) : "Not connected"}
+                    <span className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/40 px-3 py-1.5">
+                        <span className="relative flex h-2 w-2">
+                            <span
+                                className={`absolute inline-flex h-full w-full rounded-full opacity-75 ${address ? "bg-emerald-400 animate-ping" : "bg-red-500"}`}
+                            />
+                            <span
+                                className={`relative inline-flex h-2 w-2 rounded-full ${address ? "bg-emerald-400" : "bg-red-500"}`}
+                            />
                         </span>
-                    </span>
-                    <span className="text-white/20">|</span>
-                    <span className="flex items-center gap-1.5">
-                        Connection:
-                        <span
-                            className={`inline-block h-1.5 w-1.5 rounded-full ${address ? "bg-green-500" : "bg-red-500"
-                                }`}
-                        />
-                        <span className={address ? "text-green-400" : "text-red-400"}>
+                        <span className={address ? "text-emerald-400" : "text-red-400"}>
                             {address ? "CONNECTED" : "DISCONNECTED"}
                         </span>
                     </span>
@@ -160,65 +159,93 @@ export default function ConnectWallet({
             </header>
 
             {/* Hero / verify session */}
-            <section className="flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">
-                <div className="mb-10 flex h-20 w-20 items-center justify-center rounded-lg border border-blue-400/70 bg-white/5">
-                    <i className="bi bi-unlock text-3xl text-blue-400" />
+            <section className="relative flex flex-1 flex-col items-center justify-center px-6 py-20 text-center">
+                {/* Ambient glow behind the hero */}
+                <div className="pointer-events-none absolute top-1/2 left-1/2 h-[520px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent/10 blur-[130px] animate-pulse-glow" />
+
+                {/* Animated shield lock with sonar rings */}
+                <div className="relative mb-12 animate-scale-in">
+                    <span className="sonar-ring" />
+                    <span className="sonar-ring" style={{ animationDelay: "1.3s" }} />
+                    <div className="relative flex h-24 w-24 items-center justify-center rounded-2xl border border-accent/40 bg-gradient-to-br from-white/10 to-transparent shadow-[0_0_40px_rgba(56,189,248,0.25)] animate-float">
+                        <i className={`bi ${address ? "bi-shield-lock-fill" : "bi-unlock"} text-4xl text-accent`} />
+                    </div>
                 </div>
 
-                <h1 className="font-display text-4xl font-extrabold tracking-tight text-white sm:text-5xl">
-                    VERIFY BEFORE YOU EXECUTE
+                <h1 className="font-display text-4xl font-light tracking-tight text-white sm:text-6xl animate-fade-in-up delay-100">
+                    Verify Before You{" "}
+                    <span className="font-semibold text-gradient-animated">Execute</span>
                 </h1>
 
-                <p className="mt-5 max-w-md text-base text-white/60 sm:text-lg">
+                <p className="mt-6 max-w-md text-base text-white/60 sm:text-lg animate-fade-in-up delay-200">
                     {address
-                        ? `Connected: ${shortenAddress(address)}`
+                        ? `Session established for ${shortenAddress(address)}`
                         : "Connect your wallet to establish a secure verification session."}
                 </p>
 
                 {!isMetaMask && (
-                    <p className="mt-2 text-sm text-yellow-400">
-                        ⚠️ MetaMask not detected. Please install the extension.
+                    <p className="mt-3 text-sm text-yellow-400 animate-fade-in">
+                        MetaMask not detected. Please install the extension.
                     </p>
                 )}
 
-                {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+                {error && <p className="mt-3 text-sm text-red-400 animate-fade-in">{error}</p>}
 
-                {address ? (
-                    <button
-                        onClick={disconnectWallet}
-                        className="mt-10 flex items-center gap-2 rounded-md bg-white/10 px-6 py-3 font-mono text-sm font-bold tracking-wide text-white transition-colors hover:bg-white/20 focus:outline-none"
-                    >
-                        DISCONNECT WALLET
-                    </button>
-                ) : (
-                    <button
-                        onClick={connectWallet}
-                        disabled={isConnecting || !isMetaMask}
-                        className="mt-10 flex items-center gap-2 rounded-md bg-blue-500 px-6 py-3 font-mono text-sm font-bold tracking-wide text-black transition-colors hover:bg-blue-400 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {isConnecting ? "CONNECTING..." : "CONNECT WALLET →"}
-                    </button>
-                )}
+                <div className="animate-fade-in-up delay-300">
+                    {address ? (
+                        <button
+                            onClick={disconnectWallet}
+                            className="group mt-10 flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-8 py-4 font-mono text-sm font-bold tracking-wide text-white transition-all hover:bg-white/10 hover:border-white/20 focus:outline-none"
+                        >
+                            <i className="bi bi-box-arrow-right transition-transform group-hover:translate-x-0.5" />
+                            DISCONNECT WALLET
+                        </button>
+                    ) : (
+                        <button
+                            onClick={connectWallet}
+                            disabled={isConnecting || !isMetaMask}
+                            className="shimmer group mt-10 flex items-center gap-2 rounded-xl bg-gradient-to-r from-accent to-blue-600 px-8 py-4 font-mono text-sm font-bold tracking-wide text-white transition-all hover:shadow-[0_0_35px_rgba(56,189,248,0.5)] focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                            {isConnecting ? (
+                                <>
+                                    <i className="bi bi-arrow-repeat animate-spin-slow" />
+                                    CONNECTING...
+                                </>
+                            ) : (
+                                <>
+                                    <i className="bi bi-wallet2" />
+                                    CONNECT WALLET
+                                    <i className="bi bi-arrow-right transition-transform group-hover:translate-x-1" />
+                                </>
+                            )}
+                        </button>
+                    )}
+                </div>
 
-                <p className="mt-5 font-mono text-xs text-white/30">
+                <p className="mt-6 font-mono text-xs text-white/30 animate-fade-in delay-500">
                     Requires a Web3 compatible browser extension.
                 </p>
             </section>
 
             {/* Status footer */}
-            <footer className="flex h-11 w-full items-center justify-between border-t border-white/10 bg-white/5 px-6 font-mono text-[11px]">
-                <span className="text-blue-400">
-                    NETTOAI VERIFIED EXECUTION LAYER {version}
+            <footer className="flex h-12 w-full items-center justify-between border-t border-white/5 bg-black/20 px-6 font-mono text-[11px] backdrop-blur-md animate-fade-in">
+                <span className="text-accent/80 tracking-widest uppercase font-bold">
+                    NettoAI Verified Execution Layer {version}
                 </span>
-                <div className="flex items-center gap-6 text-white/50">
+                <div className="hidden items-center gap-6 text-white/50 sm:flex">
                     <span>
                         Network: <span className="text-white">{network}</span>
                     </span>
                     <span className="text-white">
                         {address ? shortenAddress(address) : "Not connected"}
                     </span>
-                    <span>
-                        Latency: <span className="text-white">24ms</span>
+                    <span className="flex items-center gap-2">
+                        Latency:
+                        <span className="relative flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-accent opacity-75" />
+                            <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+                        </span>
+                        <span className="text-white">24ms</span>
                     </span>
                 </div>
             </footer>
